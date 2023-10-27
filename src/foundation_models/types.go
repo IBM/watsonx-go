@@ -120,3 +120,12 @@ func NewGenParams(config map[string]interface{}) *GenParams {
 
 	return metaNames
 }
+
+type Credentials struct {
+	ApiKey string
+	Url    string
+}
+
+func (credentials *Credentials) setDefaultUrl() {
+	credentials.Url = "https://us-south.ml.cloud.ibm.com"
+}

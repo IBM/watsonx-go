@@ -10,17 +10,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-resty/resty/v2"
+	"github.ibm.com/robby-ibm/go-watsonx/src/foundation_models/client"
+	"github.ibm.com/robby-ibm/go-watsonx/src/utils"
 )
-
-type Credentials struct {
-	ApiKey string
-	Url    string
-}
-
-func getDefaultCredentialUrl() string {
-	return "https://us-south.ml.cloud.ibm.com"
-}
 
 const (
 	VERSION_PARAM            string = "23-05-02"
@@ -34,7 +26,6 @@ type Model struct {
 	Credentials Credentials
 	ProjectId   string
 	SpaceId     string
-	Client      *resty.Client
 }
 
 // NewModel initializes a new Model instance.
@@ -46,11 +37,22 @@ func NewModel(modelId ModelType, credentials Credentials, params GenParams, proj
 		return nil, errors.New("API key must be provided")
 	}
 	if credentials.Url == "" {
-		credentials.Url = getDefaultCredentialUrl()
+		credentials.setDefaultUrl()
 	}
 	if projectId == "" && spaceId == "" {
-		return nil, errors.New("One of these parameters is required: ['project_id', 'space_id']")
+		return nil, errors.New("one of these parameters is required: ['project_id', 'space_id']")
 	}
+
+	println(credentials.ApiKey)
+
+	// Get Bearer token from IAM
+	iamToken, err := utils.GetIAMToken(credentials.ApiKey)
+	if err != nil {
+		fmt.Println("Error getting IAM token: ", err)
+		return nil, err
+	}
+
+	credentials.ApiKey = iamToken
 
 	model := &Model{
 		ModelId:     modelId,
@@ -58,7 +60,6 @@ func NewModel(modelId ModelType, credentials Credentials, params GenParams, proj
 		Credentials: credentials,
 		ProjectId:   projectId,
 		SpaceId:     spaceId,
-		Client:      resty.New(),
 	}
 
 	return model, nil
@@ -81,7 +82,7 @@ func (model *Model) Generate(prompt string, params map[string]interface{}) (Gene
 
 	// Validate input parameters
 	if prompt == "" {
-		return GenerateResponse{}, errors.New("Prompt cannot be empty")
+		return GenerateResponse{}, errors.New("prompt cannot be empty")
 	}
 
 	payload := map[string]interface{}{
@@ -148,46 +149,40 @@ func (model *Model) Generate(prompt string, params map[string]interface{}) (Gene
 	}
 
 	if response.StatusCode >= 400 && response.StatusCode <= 599 {
-		return GenerateResponse{}, errors.New(fmt.Sprintf("Request failed with: %s (%d)", response.Status, response.StatusCode))
+		return GenerateResponse{}, fmt.Errorf(fmt.Sprintf("Request failed with: %s (%d)", response.Status, response.StatusCode))
 	}
 
 	return response, nil
 
 }
 
-// _makeGenerateRequest sends the generate request and handles the response using Resty.
+// _makeGenerateRequest sends the generate request and handles the response using the http package.
 func (model *Model) _makeGenerateRequest(payload map[string]interface{}) (GenerateResponse, error) {
 	var response GenerateResponse
 
-	// Convert the payload to JSON
-	payloadJSON, err := json.Marshal(payload)
-	if err != nil {
-		return response, err
-	}
-
 	// Construct the URL for the generate endpoint
-	generateTextURL := fmt.Sprintf("%s/text?version=%s", TEXT_GENERATION_ENDPOINT, VERSION_PARAM)
+	generateTextURL := fmt.Sprintf("%s/%s/text?version=%s", model.Credentials.Url, TEXT_GENERATION_ENDPOINT, VERSION_PARAM)
 
-	// Send the HTTP POST request
-	resp, err := model.Client.R().
-		SetHeader("Content-Type", "application/json").
-		SetHeader("Authorization", "Bearer "+model.Credentials.ApiKey). // Replace with your actual access token
-		SetBody(payloadJSON).
-		Post(generateTextURL)
-
+	// Send the HTTP POST request using PostRequest
+	resp, err := client.PostRequest(generateTextURL, payload, model.Credentials.ApiKey)
 	if err != nil {
 		return response, err
 	}
 
 	// Check for HTTP status code errors
-	if resp.StatusCode() >= 400 && resp.StatusCode() <= 599 {
-		return response, errors.New(fmt.Sprintf("Request failed with status code: %d", resp.StatusCode()))
+	if resp.StatusCode >= 400 && resp.StatusCode <= 599 {
+		return response, fmt.Errorf(fmt.Sprintf("Request failed with status code: %d", resp.StatusCode))
 	}
 
 	// Parse the response JSON into the GenerateResponse struct
-	if err := json.Unmarshal(resp.Body(), &response); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return response, err
 	}
 
 	return response, nil
+}
+
+func (m Model) String() string {
+	return fmt.Sprintf("ModelId: %s\nParams: %s\nCredentials: %s\nProjectId: %s\nSpaceId: %s",
+		m.ModelId, m.Params, m.Credentials, m.ProjectId, m.SpaceId)
 }
