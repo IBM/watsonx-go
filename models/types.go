@@ -1,4 +1,4 @@
-package foundation_models
+package models
 
 import (
 	"fmt"

@@ -18,6 +18,33 @@
   )
   ```
 
+## Example Usage
+
+### Builder Pattern
+
+  ```go
+	model, err := wx.NewModelBuilder().
+		SetModelId(wx.ModelTypesEnum.LLAMA_2_70B_CHAT).
+		SetApiKey(yourWatsonxApiKey).
+		SetProjectId(yourWatsonxProjectID).
+		SetTemperature(yourtemperature).
+		SetMaxNewTokens(yourMaxNewTokens).
+		SetDecodingMethod(wx.DecodingMethodsEnum.GREEDY).
+		Build()
+	if err != nil {
+		// Failed to get watsonx model
+		return err
+	}
+
+	result, err := model.GenerateText(
+		"Hi, how are you?",
+		nil, /* or your Generation Params */
+	)
+	if err != nil {
+		// Failed to call generate on model
+		return err
+	}
+  ```
 
 
 ## Setup

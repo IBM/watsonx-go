@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.ibm.com/robby-ibm/go-watsonx/foundation_models"
+	"github.ibm.com/robby-ibm/go-watsonx/models"
 )
 
 const (
@@ -21,12 +21,12 @@ func TestGenerateText(t *testing.T) {
 	}
 
 	// Create a test model with dummy data
-	model, err := foundation_models.NewModel(
+	model, err := models.NewModel(
 		"",
-		foundation_models.Credentials{ApiKey: apiKey, Url: ""},
-		nil,
+		models.Credentials{ApiKey: apiKey, Url: ""},
 		dumbyProjectId,
 		dumbySpaceId,
+		nil,
 	)
 	if model == nil {
 		t.Error("Expected proper creation of model. Error: ", err)
