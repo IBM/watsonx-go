@@ -1,28 +1,28 @@
 # go-watsonx
 
-  A watsonx API Wrapper Client for Go
+A watsonx API Wrapper Client for Go
 
 ## Install
 
-  Install:
+Install:
 
-  ```sh
-  go get -u github.ibm.com/robby-ibm/go-watsonx
-  ```
+```sh
+go get -u github.com/h0rv/go-watsonx
+```
 
-  Import:
+Import:
 
-  ```go
-  import (
-    wx "github.ibm.com/robby-ibm/go-watsonx/foundation_models"
-  )
-  ```
+```go
+import (
+  wx "github.com/h0rv/go-watsonx/foundation_models"
+)
+```
 
 ## Example Usage
 
 ### Builder Pattern
 
-  ```go
+```go
 	model, err := wx.NewModelBuilder().
 		SetModelId(wx.ModelTypesEnum.LLAMA_2_70B_CHAT).
 		SetApiKey(yourWatsonxApiKey).
@@ -44,20 +44,19 @@
 		// Failed to call generate on model
 		return err
 	}
-  ```
-
+```
 
 ## Setup
 
 ### Pre-commit Hooks
 
-  Run the following command to run pre-commit formatting:
+Run the following command to run pre-commit formatting:
 
-  ```sh
-  git config --local core.hooksPath .githooks/
-  ```
+```sh
+git config --local core.hooksPath .githooks/
+```
 
 ## Resources
 
-  - [watsonx Python SDK Docs](https://ibm.github.io/watson-machine-learning-sdk)
-  - [watsonx REST API Docs (Internal)](https://test.cloud.ibm.com/apidocs/watsonx-ai)
+- [watsonx Python SDK Docs](https://ibm.github.io/watson-machine-learning-sdk)
+- [watsonx REST API Docs (Internal)](https://test.cloud.ibm.com/apidocs/watsonx-ai)
