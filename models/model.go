@@ -11,8 +11,8 @@ import (
 	"io"
 	"time"
 
-	"github.ibm.com/robby-ibm/go-watsonx/models/client"
-	"github.ibm.com/robby-ibm/go-watsonx/utils"
+	"github.com/h0rv/go-watsonx/models/client"
+	"github.com/h0rv/go-watsonx/utils"
 )
 
 const (

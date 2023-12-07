@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.ibm.com/robby-ibm/go-watsonx/models"
+	"github.com/h0rv/go-watsonx/models"
 )
 
 const (
