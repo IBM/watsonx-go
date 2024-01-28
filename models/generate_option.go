@@ -28,7 +28,7 @@ type GenerateOptions struct {
 	TopP                *float64       `json:"top_p,omitempty"`
 	TopK                *uint          `json:"top_k,omitempty"`
 	RandomSeed          *uint          `json:"random_seed,omitempty"`
-	RepetitionPenalty   *uint          `json:"repetition_penalty,omitempty"`
+	RepetitionPenalty   *float64       `json:"repetition_penalty,omitempty"`
 	MinNewTokens        *uint          `json:"min_new_tokens,omitempty"`
 	MaxNewTokens        *uint          `json:"max_new_tokens,omitempty"`
 	StopSequences       *[]string      `json:"stop_sequences,omitempty"`
