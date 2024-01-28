@@ -38,7 +38,7 @@ func TestEmptyPromptError(t *testing.T) {
 
 	_, err := model.GenerateText("")
 	if err == nil {
-		t.Errorf("Expected error for an empty prompt, but got nil")
+		t.Fatalf("Expected error for an empty prompt, but got nil")
 	}
 }
 
@@ -47,7 +47,7 @@ func TestNilOptions(t *testing.T) {
 
 	_, err := model.GenerateText("What day is it?", nil)
 	if err != nil {
-		t.Errorf("Expected no error for nil options, but got %v", err)
+		t.Fatalf("Expected no error for nil options, but got %v", err)
 	}
 }
 
@@ -57,7 +57,7 @@ func TestValidPrompt(t *testing.T) {
 	prompt := "Test prompt"
 	_, err := model.GenerateText(prompt)
 	if err != nil {
-		t.Errorf("Expected no error, but got an error: %v", err)
+		t.Fatalf("Expected no error, but got an error: %v", err)
 	}
 }
 
@@ -74,10 +74,10 @@ func TestGenerateText(t *testing.T) {
 		models.WithDecodingMethod(models.Greedy),
 	)
 	if err != nil {
-		t.Errorf("Expected no error, but got an error: %v", err)
+		t.Fatalf("Expected no error, but got an error: %v", err)
 	}
 	if result == "" {
-		t.Error("Expected a result, but got an empty string")
+		t.Fatal("Expected a result, but got an empty string")
 	}
 }
 
@@ -90,9 +90,9 @@ func TestGenerateTextWithNilOptions(t *testing.T) {
 		nil,
 	)
 	if err != nil {
-		t.Errorf("Expected no error, but got an error: %v", err)
+		t.Fatalf("Expected no error, but got an error: %v", err)
 	}
 	if result == "" {
-		t.Error("Expected a result, but got an empty string")
+		t.Fatal("Expected a result, but got an empty string")
 	}
 }
