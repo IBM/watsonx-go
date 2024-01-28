@@ -18,12 +18,12 @@ type IAMToken struct {
 	expiration time.Time
 }
 
-func GenerateToken(client Doer, ibmCloudAPIKey IBMCloudAPIKey) (IAMToken, error) {
-	type TokenResponse struct {
-		accessToken string `json:"access_token"`
-		expiration  int64  `json:"expiration"`
-	}
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+	Expiration  int64  `json:"expiration"`
+}
 
+func GenerateToken(client Doer, ibmCloudAPIKey IBMCloudAPIKey) (IAMToken, error) {
 	values := url.Values{
 		"grant_type": {"urn:ibm:params:oauth:grant-type:apikey"},
 		"apikey":     {ibmCloudAPIKey},
@@ -49,15 +49,15 @@ func GenerateToken(client Doer, ibmCloudAPIKey IBMCloudAPIKey) (IAMToken, error)
 		return IAMToken{}, err
 	}
 
-	var tokenResponse TokenResponse
-	err = json.Unmarshal(body, &tokenResponse)
+	var tokenRes TokenResponse
+	err = json.Unmarshal(body, &tokenRes)
 	if err != nil {
 		return IAMToken{}, err
 	}
 
 	return IAMToken{
-		tokenResponse.accessToken,
-		time.Unix(tokenResponse.expiration, 0),
+		tokenRes.AccessToken,
+		time.Unix(tokenRes.Expiration, 0),
 	}, nil
 
 }

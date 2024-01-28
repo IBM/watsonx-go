@@ -20,11 +20,11 @@ type GenerateResult struct {
 	StopReason    string `json:"stop_reason"`
 }
 
-type generatePayload struct {
-	projectID  string           `json:"project_id"`
-	model      string           `json:"model_id"`
-	prompt     string           `json:"input"`
-	parameters *GenerateOptions `json:"parameters,omitempty"`
+type GeneratePayload struct {
+	ProjectID  string           `json:"project_id"`
+	Model      string           `json:"model_id"`
+	Prompt     string           `json:"input"`
+	Parameters *GenerateOptions `json:"parameters,omitempty"`
 }
 
 type generateResponse struct {
@@ -35,7 +35,7 @@ type generateResponse struct {
 
 // GenerateText generates completion text based on a given prompt and parameters
 func (m *Model) GenerateText(prompt string, options ...GenerateOption) (string, error) {
-    m.CheckAndRefreshToken()
+	m.CheckAndRefreshToken()
 
 	if prompt == "" {
 		return "", errors.New("prompt cannot be empty")
@@ -48,22 +48,16 @@ func (m *Model) GenerateText(prompt string, options ...GenerateOption) (string, 
 		}
 	}
 
-	payload := generatePayload{
-		projectID:  m.projectID,
-		model:      m.modelType,
-		prompt:     prompt,
-		parameters: opts,
+	payload := GeneratePayload{
+		ProjectID:  m.projectID,
+		Model:      m.modelType,
+		Prompt:     prompt,
+		Parameters: opts,
 	}
 
 	response, err := m.generateTextRequest(payload)
 	if err != nil {
 		return "", err
-	}
-
-	statusCode := response.StatusCode
-
-	if statusCode < 200 || statusCode >= 300 {
-		return "", fmt.Errorf(fmt.Sprintf("Request failed with: %s (%d)", response.Status, statusCode))
 	}
 
 	result := response.Results[0].GeneratedText
@@ -72,7 +66,8 @@ func (m *Model) GenerateText(prompt string, options ...GenerateOption) (string, 
 }
 
 // generateTextRequest sends the generate request and handles the response using the http package.
-func (m *Model) generateTextRequest(payload generatePayload) (generateResponse, error) {
+// Returns error on non-2XX response
+func (m *Model) generateTextRequest(payload GeneratePayload) (generateResponse, error) {
 	params := url.Values{
 		"version": {m.apiVersion},
 	}
@@ -97,22 +92,27 @@ func (m *Model) generateTextRequest(payload generatePayload) (generateResponse, 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.token.value)
 
-	resp, err := m.httpClient.Do(req)
+	res, err := m.httpClient.Do(req)
 	if err != nil {
 		return generateResponse{}, err
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 && resp.StatusCode <= 599 {
-		body, _ := io.ReadAll(resp.Body)
-		return generateResponse{}, fmt.Errorf(fmt.Sprintf("Request failed with status code %d and error %s", resp.StatusCode, body))
+	statusCode := res.StatusCode
+
+	if statusCode < 200 || statusCode >= 300 {
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return generateResponse{}, fmt.Errorf("request failed with status code %d", statusCode)
+		}
+		return generateResponse{}, fmt.Errorf("request failed with status code %d and error %s", statusCode, body)
 	}
+	defer res.Body.Close()
 
-	var response generateResponse
+	var generateRes generateResponse
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&generateRes); err != nil {
 		return generateResponse{}, err
 	}
 
-	return response, nil
+	return generateRes, nil
 }
