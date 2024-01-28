@@ -11,10 +11,10 @@ func getModel(t *testing.T) *wx.Model {
 	apiKey := os.Getenv(wx.IBMCloudAPIKeyEnvVarName)
 	projectID := os.Getenv(wx.WatsonxProjectIDEnvVarName)
 	if apiKey == "" {
-        t.Fatal("No IBM Cloud API key provided")
+		t.Fatal("No IBM Cloud API key provided")
 	}
 	if projectID == "" {
-        t.Fatal("No watsonx project ID provided")
+		t.Fatal("No watsonx project ID provided")
 	}
 
 	model, err := wx.NewModel(

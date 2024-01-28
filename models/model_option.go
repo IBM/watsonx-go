@@ -10,7 +10,7 @@ type ModelOptions struct {
 	ibmCloudAPIKey IBMCloudAPIKey
 	projectID      WatsonxProjectID
 
-	Model      ModelTypes
+	Model ModelTypes
 }
 
 func WithURL(url string) ModelOption {
