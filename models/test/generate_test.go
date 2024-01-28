@@ -21,7 +21,7 @@ func getModel(t *testing.T) *models.Model {
 	}
 
 	// Create a test model with dummy data
-	model, err := models.New(
+	model, err := models.NewModel(
 		apiKey,
 		DummyProjectID,
 		models.WithModel(models.FLAN_UL2),
@@ -58,5 +58,41 @@ func TestValidPrompt(t *testing.T) {
 	_, err := model.GenerateText(prompt)
 	if err != nil {
 		t.Errorf("Expected no error, but got an error: %v", err)
+	}
+}
+
+func TestGenerateText(t *testing.T) {
+	model := getModel(t)
+
+	prompt := "Hi, who are you?"
+	result, err := model.GenerateText(
+		prompt,
+		models.WithTemperature(0.9),
+		models.WithTopP(.5),
+		models.WithTopK(10),
+		models.WithMaxNewTokens(512),
+		models.WithDecodingMethod(models.Greedy),
+	)
+	if err != nil {
+		t.Errorf("Expected no error, but got an error: %v", err)
+	}
+	if result == "" {
+		t.Error("Expected a result, but got an empty string")
+	}
+}
+
+func TestGenerateTextWithNilOptions(t *testing.T) {
+	model := getModel(t)
+
+	prompt := "Who are you?"
+	result, err := model.GenerateText(
+		prompt,
+		nil,
+	)
+	if err != nil {
+		t.Errorf("Expected no error, but got an error: %v", err)
+	}
+	if result == "" {
+		t.Error("Expected a result, but got an empty string")
 	}
 }

@@ -24,7 +24,7 @@ type Model struct {
 	httpClient Doer
 }
 
-func New(apiKey, projectID string, options ...ModelOption) (*Model, error) {
+func NewModel(apiKey, projectID string, options ...ModelOption) (*Model, error) {
 
 	opts := defaulModelOptions()
 	for _, opt := range options {
