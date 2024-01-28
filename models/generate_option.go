@@ -73,7 +73,7 @@ func WithRandomSeed(randomSeed uint) GenerateOption {
 	}
 }
 
-func WithRepetitionPenalty(repetitionPenalty uint) GenerateOption {
+func WithRepetitionPenalty(repetitionPenalty float64) GenerateOption {
 	return func(opts *GenerateOptions) {
 		opts.RepetitionPenalty = &repetitionPenalty
 	}
