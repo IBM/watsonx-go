@@ -4,27 +4,23 @@ import (
 	"os"
 	"testing"
 
-	"github.com/h0rv/go-watsonx/models"
+	wx "github.com/h0rv/go-watsonx/models"
 )
 
-const (
-	DummyProjectID = "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-	DummySpaceID   = "c9d1e1b2-936c-4e70-9d54-21ed4049e131"
-)
-
-func getModel(t *testing.T) *models.Model {
-	// ENV Variables For Testing
-	apiKey := os.Getenv("API_KEY")
+func getModel(t *testing.T) *wx.Model {
+	apiKey := os.Getenv(wx.IBMCloudAPIKeyEnvVarName)
+	projectID := os.Getenv(wx.WatsonxProjectIDEnvVarName)
 	if apiKey == "" {
-		// If the environment variable is not set, use a dummy value
-		apiKey = "your_dummy_api_key"
+        t.Fatal("No IBM Cloud API key provided")
+	}
+	if projectID == "" {
+        t.Fatal("No watsonx project ID provided")
 	}
 
-	// Create a test model with dummy data
-	model, err := models.NewModel(
+	model, err := wx.NewModel(
 		apiKey,
-		DummyProjectID,
-		models.WithModel(models.FLAN_UL2),
+		projectID,
+		wx.WithModel(wx.FLAN_UL2),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create model for testing. Error: %v", err)
@@ -67,11 +63,11 @@ func TestGenerateText(t *testing.T) {
 	prompt := "Hi, who are you?"
 	result, err := model.GenerateText(
 		prompt,
-		models.WithTemperature(0.9),
-		models.WithTopP(.5),
-		models.WithTopK(10),
-		models.WithMaxNewTokens(512),
-		models.WithDecodingMethod(models.Greedy),
+		wx.WithTemperature(0.9),
+		wx.WithTopP(.5),
+		wx.WithTopK(10),
+		wx.WithMaxNewTokens(512),
+		wx.WithDecodingMethod(wx.Greedy),
 	)
 	if err != nil {
 		t.Fatalf("Expected no error, but got an error: %v", err)

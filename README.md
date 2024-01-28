@@ -1,6 +1,6 @@
 # go-watsonx
 
-A watsonx API Wrapper Client for Go
+Zero dependency [watsonx](https://www.ibm.com/watsonx) API Client for Go
 
 ## Install
 
@@ -39,7 +39,22 @@ import (
   println(result)
 ```
 
-## Setup
+## Development Setup
+
+### Tests
+
+#### Setup
+
+```sh
+export IBMCLOUD_API_KEY="YOUR IBM CLOUD API KEY"
+export WATSONX_PROJECT_ID="YOUR WATSONX PROJECT ID"
+```
+
+#### Run
+
+```sh
+go test ./...
+```
 
 ### Pre-commit Hooks
 
