@@ -36,7 +36,7 @@ import (
 		wx.WithDecodingMethod(wx.Greedy),
 	)
 
-  println(result)
+  println(result.Text)
 ```
 
 ## Development Setup

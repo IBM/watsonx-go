@@ -72,7 +72,7 @@ func TestGenerateText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, but got an error: %v", err)
 	}
-	if result == "" {
+	if result.Text == "" {
 		t.Fatal("Expected a result, but got an empty string")
 	}
 }
@@ -88,7 +88,7 @@ func TestGenerateTextWithNilOptions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Expected no error, but got an error: %v", err)
 	}
-	if result == "" {
+	if result.Text == "" {
 		t.Fatal("Expected a result, but got an empty string")
 	}
 }
