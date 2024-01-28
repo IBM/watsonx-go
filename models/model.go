@@ -7,6 +7,7 @@ package models
 import (
 	"fmt"
 	"net/http"
+	"os"
 )
 
 type Model struct {
@@ -88,6 +89,10 @@ func defaulModelOptions() *ModelOptions {
 		URL:        "",
 		Region:     DefaultRegion,
 		APIVersion: DefaultAPIVersion,
-		Model:      DefaultModelType,
+
+		ibmCloudAPIKey: os.Getenv(IBMCloudAPIKeyEnvVarName),
+		projectID:      os.Getenv(WatsonxProjectIDEnvVarName),
+
+		Model: DefaultModelType,
 	}
 }
