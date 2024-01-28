@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	dumbyProjectId = "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-	dumbySpaceId   = "c9d1e1b2-936c-4e70-9d54-21ed4049e131"
+	DummyProjectID = "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+	DummySpaceID   = "c9d1e1b2-936c-4e70-9d54-21ed4049e131"
 )
 
-func TestGenerateText(t *testing.T) {
+func getModel(t *testing.T) *models.Model {
 	// ENV Variables For Testing
 	apiKey := os.Getenv("API_KEY")
 	if apiKey == "" {
@@ -22,28 +22,77 @@ func TestGenerateText(t *testing.T) {
 
 	// Create a test model with dummy data
 	model, err := models.NewModel(
-		"",
-		models.Credentials{ApiKey: apiKey, Url: ""},
-		dumbyProjectId,
-		dumbySpaceId,
+		apiKey,
+		DummyProjectID,
+		models.WithModel(models.FLAN_UL2),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create model for testing. Error: %v", err)
+	}
+
+	return model
+}
+
+func TestEmptyPromptError(t *testing.T) {
+	model := getModel(t)
+
+	_, err := model.GenerateText("")
+	if err == nil {
+		t.Fatalf("Expected error for an empty prompt, but got nil")
+	}
+}
+
+func TestNilOptions(t *testing.T) {
+	model := getModel(t)
+
+	_, err := model.GenerateText("What day is it?", nil)
+	if err != nil {
+		t.Fatalf("Expected no error for nil options, but got %v", err)
+	}
+}
+
+func TestValidPrompt(t *testing.T) {
+	model := getModel(t)
+
+	prompt := "Test prompt"
+	_, err := model.GenerateText(prompt)
+	if err != nil {
+		t.Fatalf("Expected no error, but got an error: %v", err)
+	}
+}
+
+func TestGenerateText(t *testing.T) {
+	model := getModel(t)
+
+	prompt := "Hi, who are you?"
+	result, err := model.GenerateText(
+		prompt,
+		models.WithTemperature(0.9),
+		models.WithTopP(.5),
+		models.WithTopK(10),
+		models.WithMaxNewTokens(512),
+		models.WithDecodingMethod(models.Greedy),
+	)
+	if err != nil {
+		t.Fatalf("Expected no error, but got an error: %v", err)
+	}
+	if result == "" {
+		t.Fatal("Expected a result, but got an empty string")
+	}
+}
+
+func TestGenerateTextWithNilOptions(t *testing.T) {
+	model := getModel(t)
+
+	prompt := "Who are you?"
+	result, err := model.GenerateText(
+		prompt,
 		nil,
 	)
-	if model == nil {
-		t.Error("Expected proper creation of model. Error: ", err)
-		return
-	}
-
-	// Test case 1: Empty prompt should return an error
-	_, err = model.GenerateText("", nil)
-	if err == nil {
-		t.Error("Expected error for an empty prompt, but got nil")
-	}
-
-	// Test case 2: Valid prompt with no additional parameters
-	prompt := "Test prompt"
-	_, err = model.GenerateText(prompt, nil)
 	if err != nil {
-		t.Errorf("Expected no error, but got an error: %v", err)
+		t.Fatalf("Expected no error, but got an error: %v", err)
 	}
-	// Add more test cases as needed
+	if result == "" {
+		t.Fatal("Expected a result, but got an empty string")
+	}
 }

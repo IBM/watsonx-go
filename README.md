@@ -14,36 +14,29 @@ Import:
 
 ```go
 import (
-  wx "github.com/h0rv/go-watsonx/foundation_models"
+  wx "github.com/h0rv/go-watsonx/models"
 )
 ```
 
 ## Example Usage
 
-### Builder Pattern
-
 ```go
-	model, err := wx.NewModelBuilder().
-		SetModelId(wx.ModelTypesEnum.LLAMA_2_70B_CHAT).
-		SetApiKey(yourWatsonxApiKey).
-		SetProjectId(yourWatsonxProjectID).
-		SetTemperature(yourtemperature).
-		SetMaxNewTokens(yourMaxNewTokens).
-		SetDecodingMethod(wx.DecodingMethodsEnum.GREEDY).
-		Build()
-	if err != nil {
-		// Failed to get watsonx model
-		return err
-	}
-
-	result, err := model.GenerateText(
-		"Hi, how are you?",
-		nil, /* or your Generation Params */
+	model, _ := wx.NewModel(
+		yourIBMCloudAPIKey,
+		yourWatsonxProjectID,
+		wx.WithModel(wx.LLAMA_2_70B_CHAT),
 	)
-	if err != nil {
-		// Failed to call generate on model
-		return err
-	}
+
+	result, _ := model.GenerateText(
+    "Hi, who are you?",
+		wx.WithTemperature(0.9),
+		wx.WithTopP(.5),
+		wx.WithTopK(10),
+		wx.WithMaxNewTokens(512),
+		wx.WithDecodingMethod(wx.Greedy),
+	)
+
+  println(result)
 ```
 
 ## Setup
