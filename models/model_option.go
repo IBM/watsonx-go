@@ -10,7 +10,7 @@ type ModelOptions struct {
 	ibmCloudAPIKey IBMCloudAPIKey
 	projectID      WatsonxProjectID
 
-	Model      ModelTypes
+	Model ModelTypes
 }
 
 func WithURL(url string) ModelOption {
@@ -37,7 +37,7 @@ func WithIBMCloudAPIKey(ibmCloudAPIKey IBMCloudAPIKey) ModelOption {
 	}
 }
 
-func WithWaWatsonxProjectID(projectID WatsonxProjectID) ModelOption {
+func WithWatsonxProjectID(projectID WatsonxProjectID) ModelOption {
 	return func(o *ModelOptions) {
 		o.projectID = projectID
 	}
