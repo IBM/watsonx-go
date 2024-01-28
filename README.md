@@ -22,8 +22,8 @@ import (
 
 ```go
 	model, _ := wx.NewModel(
-		yourIBMCloudAPIKey,
-		yourWatsonxProjectID,
+		wx.WithIBMCloudAPIKey("YOUR IBM CLOUD API KEY"),
+		wx.WithWatsonxProjectID("YOUR WATSONX PROJECT ID"),
 		wx.WithModel(wx.LLAMA_2_70B_CHAT),
 	)
 

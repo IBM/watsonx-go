@@ -18,8 +18,8 @@ func getModel(t *testing.T) *wx.Model {
 	}
 
 	model, err := wx.NewModel(
-		apiKey,
-		projectID,
+		wx.WithIBMCloudAPIKey(apiKey),
+		wx.WithWatsonxProjectID(projectID),
 		wx.WithModel(wx.FLAN_UL2),
 	)
 	if err != nil {

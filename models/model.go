@@ -25,7 +25,7 @@ type Model struct {
 	httpClient Doer
 }
 
-func NewModel(apiKey, projectID string, options ...ModelOption) (*Model, error) {
+func NewModel(options ...ModelOption) (*Model, error) {
 
 	opts := defaulModelOptions()
 	for _, opt := range options {
@@ -44,8 +44,8 @@ func NewModel(apiKey, projectID string, options ...ModelOption) (*Model, error) 
 		region:     opts.Region,
 		apiVersion: opts.APIVersion,
 
-		ibmCloudAPIKey: apiKey,
-		projectID:      projectID,
+		ibmCloudAPIKey: opts.ibmCloudAPIKey,
+		projectID:      opts.projectID,
 
 		modelType: opts.Model,
 
