@@ -28,7 +28,7 @@ import (
 	)
 
 	result, _ := model.GenerateText(
-    "Hi, who are you?",
+		"Hi, who are you?",
 		wx.WithTemperature(0.9),
 		wx.WithTopP(.5),
 		wx.WithTopK(10),
