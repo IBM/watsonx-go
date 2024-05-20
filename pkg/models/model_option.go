@@ -7,10 +7,8 @@ type ModelOptions struct {
 	Region     IBMCloudRegion
 	APIVersion string
 
-	ibmCloudAPIKey IBMCloudAPIKey
-	projectID      WatsonxProjectID
-
-	Model ModelTypes
+	watsonxAPIKey WatsonxAPIKey
+	projectID     WatsonxProjectID
 }
 
 func WithURL(url string) ModelOption {
@@ -31,20 +29,14 @@ func WithAPIVersion(apiVersion string) ModelOption {
 	}
 }
 
-func WithIBMCloudAPIKey(ibmCloudAPIKey IBMCloudAPIKey) ModelOption {
+func WithWatsonxAPIKey(watsonxAPIKey WatsonxAPIKey) ModelOption {
 	return func(o *ModelOptions) {
-		o.ibmCloudAPIKey = ibmCloudAPIKey
+		o.watsonxAPIKey = watsonxAPIKey
 	}
 }
 
 func WithWatsonxProjectID(projectID WatsonxProjectID) ModelOption {
 	return func(o *ModelOptions) {
 		o.projectID = projectID
-	}
-}
-
-func WithModel(model ModelTypes) ModelOption {
-	return func(o *ModelOptions) {
-		o.Model = model
 	}
 }
