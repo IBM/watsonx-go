@@ -15,12 +15,9 @@ type Model struct {
 	region     IBMCloudRegion
 	apiVersion string
 
-	ibmCloudAPIKey IBMCloudAPIKey
-	projectID      WatsonxProjectID
-
-	modelType ModelTypes
-
-	token IAMToken
+	token     IAMToken
+	apiKey    WatsonxAPIKey
+	projectID WatsonxProjectID
 
 	httpClient Doer
 }
@@ -44,12 +41,9 @@ func NewModel(options ...ModelOption) (*Model, error) {
 		region:     opts.Region,
 		apiVersion: opts.APIVersion,
 
-		ibmCloudAPIKey: opts.ibmCloudAPIKey,
-		projectID:      opts.projectID,
-
-		modelType: opts.Model,
-
 		// token: set below
+		apiKey:    opts.watsonxAPIKey,
+		projectID: opts.projectID,
 
 		httpClient: &http.Client{},
 	}
@@ -72,7 +66,7 @@ func (m *Model) CheckAndRefreshToken() error {
 
 // RefreshToken generates and sets the model with a new token
 func (m *Model) RefreshToken() error {
-	token, err := GenerateToken(m.httpClient, m.ibmCloudAPIKey)
+	token, err := GenerateToken(m.httpClient, m.apiKey)
 	if err != nil {
 		return err
 	}
@@ -90,9 +84,7 @@ func defaulModelOptions() *ModelOptions {
 		Region:     DefaultRegion,
 		APIVersion: DefaultAPIVersion,
 
-		ibmCloudAPIKey: os.Getenv(IBMCloudAPIKeyEnvVarName),
-		projectID:      os.Getenv(WatsonxProjectIDEnvVarName),
-
-		Model: DefaultModelType,
+		watsonxAPIKey: os.Getenv(WatsonxAPIKeyEnvVarName),
+		projectID:     os.Getenv(WatsonxProjectIDEnvVarName),
 	}
 }

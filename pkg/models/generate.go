@@ -49,7 +49,7 @@ type generateTextResponse struct {
 }
 
 // GenerateText generates completion text based on a given prompt and parameters
-func (m *Model) GenerateText(prompt string, options ...GenerateOption) (GenerateTextResult, error) {
+func (m *Model) GenerateText(model, prompt string, options ...GenerateOption) (GenerateTextResult, error) {
 	m.CheckAndRefreshToken()
 
 	if prompt == "" {
@@ -65,7 +65,7 @@ func (m *Model) GenerateText(prompt string, options ...GenerateOption) (Generate
 
 	payload := GenerateTextPayload{
 		ProjectID:  m.projectID,
-		Model:      m.modelType,
+		Model:      model,
 		Prompt:     prompt,
 		Parameters: opts,
 	}

@@ -23,10 +23,10 @@ type TokenResponse struct {
 	Expiration  int64  `json:"expiration"`
 }
 
-func GenerateToken(client Doer, ibmCloudAPIKey IBMCloudAPIKey) (IAMToken, error) {
+func GenerateToken(client Doer, watsonxApiKey WatsonxAPIKey) (IAMToken, error) {
 	values := url.Values{
 		"grant_type": {"urn:ibm:params:oauth:grant-type:apikey"},
-		"apikey":     {ibmCloudAPIKey},
+		"apikey":     {watsonxApiKey},
 	}
 
 	payload := strings.NewReader(values.Encode())
