@@ -4,10 +4,6 @@ import (
 	"net/http"
 )
 
-/*
- *  https://ibm.github.io/watson-machine-learning-sdk/model.html#ibm_watson_machine_learning.foundation_models.utils.enums.ModelTypes
- */
-
 type (
 	WatsonxAPIKey    = string
 	WatsonxProjectID = string

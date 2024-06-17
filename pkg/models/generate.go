@@ -49,7 +49,7 @@ type generateTextResponse struct {
 }
 
 // GenerateText generates completion text based on a given prompt and parameters
-func (m *Model) GenerateText(model, prompt string, options ...GenerateOption) (GenerateTextResult, error) {
+func (m *Client) GenerateText(model, prompt string, options ...GenerateOption) (GenerateTextResult, error) {
 	m.CheckAndRefreshToken()
 
 	if prompt == "" {
@@ -86,7 +86,7 @@ func (m *Model) GenerateText(model, prompt string, options ...GenerateOption) (G
 
 // generateTextRequest sends the generate request and handles the response using the http package.
 // Returns error on non-2XX response
-func (m *Model) generateTextRequest(payload GenerateTextPayload) (generateTextResponse, error) {
+func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextResponse, error) {
 	params := url.Values{
 		"version": {m.apiVersion},
 	}

@@ -4,12 +4,20 @@ import (
 	"os"
 	"testing"
 
-	wx "github.com/h0rv/go-watsonx/pkg/models"
+	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
-func getModel(t *testing.T) *wx.Model {
-	apiKey := os.Getenv(wx.WatsonxAPIKeyEnvVarName)
-	projectID := os.Getenv(wx.WatsonxProjectIDEnvVarName)
+func TestClientCreationWithEnvVars(t *testing.T) {
+	_, err := wx.NewClient()
+
+	if err != nil {
+		t.Fatalf("Expected no error for creating client with environment variables, but got %v", err)
+	}
+}
+
+func TestClientCreationWithPassing(t *testing.T) {
+	apiKey, projectID := os.Getenv(wx.WatsonxAPIKeyEnvVarName), os.Getenv(wx.WatsonxProjectIDEnvVarName)
+
 	if apiKey == "" {
 		t.Fatal("No watsonx API key provided")
 	}
@@ -17,21 +25,41 @@ func getModel(t *testing.T) *wx.Model {
 		t.Fatal("No watsonx project ID provided")
 	}
 
-	model, err := wx.NewModel(
+	_, err := wx.NewClient(
+		wx.WithWatsonxAPIKey(apiKey),
+		wx.WithWatsonxProjectID(projectID),
+	)
+
+	if err != nil {
+		t.Fatalf("Expected no error for creating client with passing secrets, but got %v", err)
+	}
+}
+
+func getClient(t *testing.T) *wx.Client {
+	apiKey, projectID := os.Getenv(wx.WatsonxAPIKeyEnvVarName), os.Getenv(wx.WatsonxProjectIDEnvVarName)
+
+	if apiKey == "" {
+		t.Fatal("No watsonx API key provided")
+	}
+	if projectID == "" {
+		t.Fatal("No watsonx project ID provided")
+	}
+
+	client, err := wx.NewClient(
 		wx.WithWatsonxAPIKey(apiKey),
 		wx.WithWatsonxProjectID(projectID),
 	)
 	if err != nil {
-		t.Fatalf("Failed to create model for testing. Error: %v", err)
+		t.Fatalf("Failed to create client for testing. Error: %v", err)
 	}
 
-	return model
+	return client
 }
 
 func TestEmptyPromptError(t *testing.T) {
-	model := getModel(t)
+	client := getClient(t)
 
-	_, err := model.GenerateText(
+	_, err := client.GenerateText(
 		"dumby model",
 		"",
 	)
@@ -41,9 +69,9 @@ func TestEmptyPromptError(t *testing.T) {
 }
 
 func TestNilOptions(t *testing.T) {
-	model := getModel(t)
+	client := getClient(t)
 
-	_, err := model.GenerateText(
+	_, err := client.GenerateText(
 		"meta-llama/llama-3-70b-instruct",
 		"What day is it?",
 		nil,
@@ -54,9 +82,9 @@ func TestNilOptions(t *testing.T) {
 }
 
 func TestValidPrompt(t *testing.T) {
-	model := getModel(t)
+	client := getClient(t)
 
-	_, err := model.GenerateText(
+	_, err := client.GenerateText(
 		"meta-llama/llama-3-70b-instruct",
 		"Test prompt",
 	)
@@ -66,9 +94,9 @@ func TestValidPrompt(t *testing.T) {
 }
 
 func TestGenerateText(t *testing.T) {
-	model := getModel(t)
+	client := getClient(t)
 
-	result, err := model.GenerateText(
+	result, err := client.GenerateText(
 		"meta-llama/llama-3-70b-instruct",
 		"Hi, who are you?",
 		wx.WithTemperature(0.9),
@@ -85,9 +113,9 @@ func TestGenerateText(t *testing.T) {
 }
 
 func TestGenerateTextWithNilOptions(t *testing.T) {
-	model := getModel(t)
+	client := getClient(t)
 
-	result, err := model.GenerateText(
+	result, err := client.GenerateText(
 		"meta-llama/llama-3-70b-instruct",
 		"Who are you?",
 		nil,

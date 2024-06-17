@@ -1,3 +1,3 @@
-module github.com/h0rv/go-watsonx
+module github.com/IBM/watsonx-go
 
-go 1.21.2
+go 1.21.4
