@@ -1,16 +1,13 @@
 package models
 
-/*
- *  https://ibm.github.io/watson-machine-learning-sdk/_modules/ibm_watson_machine_learning/foundation_models/model.html#Model
- */
-
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 )
 
-type Model struct {
+type Client struct {
 	url        string
 	region     IBMCloudRegion
 	apiVersion string
@@ -22,9 +19,9 @@ type Model struct {
 	httpClient Doer
 }
 
-func NewModel(options ...ModelOption) (*Model, error) {
+func NewClient(options ...ClientOption) (*Client, error) {
 
-	opts := defaulModelOptions()
+	opts := defaulClientOptions()
 	for _, opt := range options {
 		if opt != nil {
 			opt(opts)
@@ -36,13 +33,21 @@ func NewModel(options ...ModelOption) (*Model, error) {
 		opts.URL = buildBaseURL(opts.Region)
 	}
 
-	m := &Model{
+	if opts.apiKey == "" {
+		return nil, errors.New("no watsonx API key provided")
+	}
+
+	if opts.projectID == "" {
+		return nil, errors.New("no watsonx project ID provided")
+	}
+
+	m := &Client{
 		url:        opts.URL,
 		region:     opts.Region,
 		apiVersion: opts.APIVersion,
 
 		// token: set below
-		apiKey:    opts.watsonxAPIKey,
+		apiKey:    opts.apiKey,
 		projectID: opts.projectID,
 
 		httpClient: &http.Client{},
@@ -57,7 +62,7 @@ func NewModel(options ...ModelOption) (*Model, error) {
 }
 
 // CheckAndRefreshToken checks the IAM token if it expired; if it did, it refreshes it; nothing if not
-func (m *Model) CheckAndRefreshToken() error {
+func (m *Client) CheckAndRefreshToken() error {
 	if m.token.Expired() {
 		return m.RefreshToken()
 	}
@@ -65,7 +70,7 @@ func (m *Model) CheckAndRefreshToken() error {
 }
 
 // RefreshToken generates and sets the model with a new token
-func (m *Model) RefreshToken() error {
+func (m *Client) RefreshToken() error {
 	token, err := GenerateToken(m.httpClient, m.apiKey)
 	if err != nil {
 		return err
@@ -78,13 +83,13 @@ func buildBaseURL(region IBMCloudRegion) string {
 	return fmt.Sprintf(BaseURLFormatStr, region)
 }
 
-func defaulModelOptions() *ModelOptions {
-	return &ModelOptions{
+func defaulClientOptions() *ClientOptions {
+	return &ClientOptions{
 		URL:        "",
 		Region:     DefaultRegion,
 		APIVersion: DefaultAPIVersion,
 
-		watsonxAPIKey: os.Getenv(WatsonxAPIKeyEnvVarName),
-		projectID:     os.Getenv(WatsonxProjectIDEnvVarName),
+		apiKey:    os.Getenv(WatsonxAPIKeyEnvVarName),
+		projectID: os.Getenv(WatsonxProjectIDEnvVarName),
 	}
 }

@@ -1,41 +1,56 @@
-# go-watsonx
+# watsonx-go
 
-Zero dependency [watsonx](https://www.ibm.com/watsonx) API Client for Go
+`watsonx-go` is a [watsonx](https://www.ibm.com/watsonx) Client for Go
 
 ## Install
 
-Install:
-
 ```sh
-go get -u github.com/h0rv/go-watsonx
+go get -u github.com/IBM/watsonx-go
 ```
 
-Import:
+## Usage
 
 ```go
 import (
-  wx "github.com/h0rv/go-watsonx/pkg/models"
+  wx "github.com/IBM/watsonx-go/pkg/models"
 )
 ```
 
-## Example Usage
+### Example Usage
+
+```sh
+export WATSONX_API_KEY="YOUR WATSONX API KEY"
+export WATSONX_PROJECT_ID="YOUR WATSONX PROJECT ID"
+```
+
+Create a client:
 
 ```go
-	model, _ := wx.NewModel(
-		wx.WithIBMCloudAPIKey("YOUR IBM CLOUD API KEY"),
-		wx.WithWatsonxProjectID("YOUR WATSONX PROJECT ID"),
-	)
+client, _ := wx.NewClient()
+```
 
-	result, _ := model.GenerateText(
-		"meta-llama/llama-3-70b-instruct",
-    "Hi, who are you?",
-		wx.WithTemperature(0.9),
-		wx.WithTopP(.5),
-		wx.WithTopK(10),
-		wx.WithMaxNewTokens(512),
-	)
+Or pass in the required secrets directly:
 
-  println(result.Text)
+```go
+client, err := wx.NewClient(
+  wx.WithWatsonxAPIKey(apiKey),
+  wx.WithWatsonxProjectID(projectID),
+)
+```
+
+Generation:
+
+```go
+result, _ := client.GenerateText(
+  "meta-llama/llama-3-70b-instruct",
+  "Hi, who are you?",
+  wx.WithTemperature(0.9),
+  wx.WithTopP(.5),
+  wx.WithTopK(10),
+  wx.WithMaxNewTokens(512),
+)
+
+println(result.Text)
 ```
 
 ## Development Setup
@@ -45,7 +60,7 @@ import (
 #### Setup
 
 ```sh
-export IBMCLOUD_API_KEY="YOUR IBM CLOUD API KEY"
+export WATSONX_API_KEY="YOUR WATSONX API KEY"
 export WATSONX_PROJECT_ID="YOUR WATSONX PROJECT ID"
 ```
 
@@ -65,5 +80,5 @@ git config --local core.hooksPath .githooks/
 
 ## Resources
 
-- [watsonx Python SDK Docs](https://ibm.github.io/watson-machine-learning-sdk)
 - [watsonx REST API Docs](https://cloud.ibm.com/apidocs/watsonx-ai)
+- [watsonx Python SDK Docs](https://ibm.github.io/watson-machine-learning-sdk)
