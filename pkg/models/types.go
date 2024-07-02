@@ -12,6 +12,9 @@ type (
 )
 
 const (
+	WatsonxURLEnvVarName = "WATSONX_URL_HOST"
+	WatsonxIAMEnvVarName = "WATSONX_IAM_HOST"
+
 	WatsonxAPIKeyEnvVarName    = "WATSONX_API_KEY"
 	WatsonxProjectIDEnvVarName = "WATSONX_PROJECT_ID"
 
