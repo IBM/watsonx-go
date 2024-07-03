@@ -4,6 +4,7 @@ type ClientOption func(*ClientOptions)
 
 type ClientOptions struct {
 	URL        string
+	IAM        string
 	Region     IBMCloudRegion
 	APIVersion string
 
@@ -14,6 +15,12 @@ type ClientOptions struct {
 func WithURL(url string) ClientOption {
 	return func(o *ClientOptions) {
 		o.URL = url
+	}
+}
+
+func WithIAM(iam string) ClientOption {
+	return func(o *ClientOptions) {
+		o.IAM = iam
 	}
 }
 

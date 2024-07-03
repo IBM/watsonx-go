@@ -12,6 +12,9 @@ type (
 )
 
 const (
+	WatsonxURLEnvVarName = "WATSONX_URL_HOST" // Override the default URL host '*.ml.cloud.ibm.com'
+	WatsonxIAMEnvVarName = "WATSONX_IAM_HOST" // Override the default IAM host 'iam.cloud.ibm.com'
+
 	WatsonxAPIKeyEnvVarName    = "WATSONX_API_KEY"
 	WatsonxProjectIDEnvVarName = "WATSONX_PROJECT_ID"
 

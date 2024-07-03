@@ -7,8 +7,13 @@ import (
 	"os"
 )
 
+const (
+	IAMCloudHost = "iam.cloud.ibm.com"
+)
+
 type Client struct {
 	url        string
+	iam        string
 	region     IBMCloudRegion
 	apiVersion string
 
@@ -33,6 +38,11 @@ func NewClient(options ...ClientOption) (*Client, error) {
 		opts.URL = buildBaseURL(opts.Region)
 	}
 
+	if opts.IAM == "" {
+		// User did not specify a IAM, use the default IAM cloud host
+		opts.IAM = IAMCloudHost
+	}
+
 	if opts.apiKey == "" {
 		return nil, errors.New("no watsonx API key provided")
 	}
@@ -43,6 +53,7 @@ func NewClient(options ...ClientOption) (*Client, error) {
 
 	m := &Client{
 		url:        opts.URL,
+		iam:        opts.IAM,
 		region:     opts.Region,
 		apiVersion: opts.APIVersion,
 
@@ -71,7 +82,7 @@ func (m *Client) CheckAndRefreshToken() error {
 
 // RefreshToken generates and sets the model with a new token
 func (m *Client) RefreshToken() error {
-	token, err := GenerateToken(m.httpClient, m.apiKey)
+	token, err := GenerateToken(m.httpClient, m.apiKey, m.iam)
 	if err != nil {
 		return err
 	}
@@ -85,7 +96,8 @@ func buildBaseURL(region IBMCloudRegion) string {
 
 func defaulClientOptions() *ClientOptions {
 	return &ClientOptions{
-		URL:        "",
+		URL:        os.Getenv(WatsonxURLEnvVarName),
+		IAM:        os.Getenv(WatsonxIAMEnvVarName),
 		Region:     DefaultRegion,
 		APIVersion: DefaultAPIVersion,
 

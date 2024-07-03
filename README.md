@@ -53,6 +53,29 @@ result, _ := client.GenerateText(
 println(result.Text)
 ```
 
+### Customization
+If you want to use Watsonx test environment, choose one of the following methods:
+
+#### Option 1: Using Environment Variables
+
+Specify the Watsonx URL and IAM endpoint using environment variables:
+```sh
+export WATSONX_URL_HOST="us-south.ml.test.cloud.ibm.com"
+export WATSONX_IAM_HOST="iam.test.cloud.ibm.com"
+```
+
+#### Option 2: Using the `NewClient` Function Parameters
+
+Specify the Watsonx URL and IAM endpoint through the parameters of the NewClient function:
+```go
+client, err := wx.NewClient(
+  wx.WithURL("us-south.ml.test.cloud.ibm.com"),
+  wx.WithIAM("iam.test.cloud.ibm.com"),
+  wx.WithWatsonxAPIKey(apiKey),
+  wx.WithWatsonxProjectID(projectID),
+)
+```
+
 ## Development Setup
 
 ### Tests

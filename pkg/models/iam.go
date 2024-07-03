@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	IAMEndpoint = "https://iam.cloud.ibm.com/identity/token"
+	TokenPath string = "/identity/token"
 )
 
 type IAMToken struct {
@@ -23,7 +23,7 @@ type TokenResponse struct {
 	Expiration  int64  `json:"expiration"`
 }
 
-func GenerateToken(client Doer, watsonxApiKey WatsonxAPIKey) (IAMToken, error) {
+func GenerateToken(client Doer, watsonxApiKey WatsonxAPIKey, iamCloudHost string) (IAMToken, error) {
 	values := url.Values{
 		"grant_type": {"urn:ibm:params:oauth:grant-type:apikey"},
 		"apikey":     {watsonxApiKey},
@@ -31,7 +31,12 @@ func GenerateToken(client Doer, watsonxApiKey WatsonxAPIKey) (IAMToken, error) {
 
 	payload := strings.NewReader(values.Encode())
 
-	req, err := http.NewRequest(http.MethodPost, IAMEndpoint, payload)
+	iamTokenEndpoint := url.URL{
+		Scheme:   "https",
+		Host:     iamCloudHost,
+		Path:     TokenPath,
+	}
+	req, err := http.NewRequest(http.MethodPost, iamTokenEndpoint.String(), payload)
 	if err != nil {
 		return IAMToken{}, err
 	}
