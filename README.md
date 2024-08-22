@@ -53,6 +53,29 @@ result, _ := client.GenerateText(
 println(result.Text)
 ```
 
+Stream Generation:
+
+```go
+dataChan, _ := client.GenerateTextStream(
+    "meta-llama/llama-3-70b-instruct",
+    "Hi, who are you?",
+    wx.WithTemperature(0.9),
+    wx.WithTopP(.5),
+    wx.WithTopK(10),
+    wx.WithMaxNewTokens(512),
+)
+
+generatedText := ""
+
+for data := range dataChan {
+    generatedText += data.Text
+}
+
+println(generatedText)
+```
+
+Note: The `GenerateTextStream` function is ideal for long text generation tasks, especially when using Server-Sent Events (SSE) for real-time text streaming.
+
 ### Customization
 If you want to use Watsonx test environment, choose one of the following methods:
 
