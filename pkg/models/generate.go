@@ -90,23 +90,14 @@ func (m *Client) GenerateText(model, prompt string, options ...GenerateOption) (
 // generateTextRequest sends the generate request and handles the response using the http package.
 // Returns error on non-2XX response
 func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextResponse, error) {
-	params := url.Values{
-		"version": {m.apiVersion},
-	}
-
-	generateTextURL := url.URL{
-		Scheme:   "https",
-		Host:     m.url,
-		Path:     GenerateTextEndpoint,
-		RawQuery: params.Encode(),
-	}
+	textUrl := m.generateUrlFromEndpoint(GenerateTextEndpoint)
 
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return generateTextResponse{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, generateTextURL.String(), bytes.NewBuffer(payloadJSON))
+	req, err := http.NewRequest(http.MethodPost, textUrl, bytes.NewBuffer(payloadJSON))
 	if err != nil {
 		return generateTextResponse{}, err
 	}
@@ -187,16 +178,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 	go func() {
 		defer close(dataChan)
 
-		params := url.Values{
-			"version": {m.apiVersion},
-		}
-
-		generateTextStreamUrl := url.URL{
-			Scheme:   "https",
-			Host:     m.url,
-			Path:     GenerateTextStreamEndpoint,
-			RawQuery: params.Encode(),
-		}
+		streamUrl := m.generateUrlFromEndpoint(GenerateTextStreamEndpoint)
 
 		payloadJSON, err := json.Marshal(payload)
 		if err != nil {
@@ -204,7 +186,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 			return
 		}
 
-		req, err := http.NewRequest(http.MethodPost, generateTextStreamUrl.String(), bytes.NewBuffer(payloadJSON))
+		req, err := http.NewRequest(http.MethodPost, streamUrl, bytes.NewBuffer(payloadJSON))
 		if err != nil {
 			log.Println("error creating request: ", err)
 			return
@@ -251,4 +233,19 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 	}()
 
 	return dataChan, nil
+}
+
+func (m *Client) generateUrlFromEndpoint(endpoint string) string {
+	params := url.Values{
+		"version": {m.apiVersion},
+	}
+
+	generateTextURL := url.URL{
+		Scheme:   "https",
+		Host:     m.url,
+		Path:     endpoint,
+		RawQuery: params.Encode(),
+	}
+
+	return generateTextURL.String()
 }
