@@ -9,7 +9,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -235,19 +234,4 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 	}()
 
 	return dataChan, nil
-}
-
-func (m *Client) generateUrlFromEndpoint(endpoint string) string {
-	params := url.Values{
-		"version": {m.apiVersion},
-	}
-
-	generateTextURL := url.URL{
-		Scheme:   "https",
-		Host:     m.url,
-		Path:     endpoint,
-		RawQuery: params.Encode(),
-	}
-
-	return generateTextURL.String()
 }
