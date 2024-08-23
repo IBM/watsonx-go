@@ -171,7 +171,8 @@ func (m *Client) GenerateTextStream(model, prompt string, options ...GenerateOpt
 }
 
 // generateTextStreamRequest sends the generate request and handles the response using the http package.
-// Returns error on non-200 response
+// Closes the channel on non-200 response
+// If any error happens during the streaming, it will be logged and the channel will be closed
 func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan generateTextResponse, error) {
 	dataChan := make(chan generateTextResponse)
 
