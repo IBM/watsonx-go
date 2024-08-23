@@ -112,6 +112,69 @@ func TestGenerateText(t *testing.T) {
 	}
 }
 
+func TestGenerateTextStream(t *testing.T) {
+	client := getClient(t)
+
+	dataChan, err := client.GenerateTextStream(
+		"google/flan-ul2",
+		"Hi, who are you?",
+		wx.WithTemperature(0.9),
+		wx.WithTopP(.5),
+		wx.WithTopK(10),
+		wx.WithMinNewTokens(10),
+		wx.WithMaxNewTokens(10),
+		wx.WithRandomSeed(1),
+	)
+
+	if err != nil {
+		t.Fatalf("Expected no error, but got an error: %v", err)
+	}
+
+	expectedText := "I am a person. You are a"
+	generatedText := ""
+
+	for data := range dataChan {
+		generatedText += data.Text
+	}
+
+	if generatedText != expectedText {
+		t.Fatalf("Expected generated text to be %s, but got %s", expectedText, generatedText)
+	}
+
+}
+
+func TestGenerateTextWithNoPrompt(t *testing.T) {
+	client := getClient(t)
+
+	dataChan, err := client.GenerateTextStream(
+		"google/flan-ul2",
+		"",
+		wx.WithTemperature(0.9),
+		wx.WithTopP(.5),
+		wx.WithTopK(10),
+		wx.WithMinNewTokens(10),
+		wx.WithMaxNewTokens(10),
+		wx.WithRandomSeed(1),
+	)
+
+	if err == nil {
+		t.Fatalf("Expected an error, but got nil")
+	}
+
+	if err.Error() != "prompt cannot be empty" {
+		t.Fatalf("Expected error to be 'prompt cannot be empty', but got %v", err)
+	}
+
+	generatedText := ""
+	for data := range dataChan {
+		generatedText += data.Text
+	}
+
+	if generatedText != "" {
+		t.Fatalf("Expected generated text to be empty, but got %s", generatedText)
+	}
+}
+
 func TestGenerateTextWithNilOptions(t *testing.T) {
 	client := getClient(t)
 
