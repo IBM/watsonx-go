@@ -42,11 +42,9 @@ Generation:
 
 ```go
 result, _ := client.GenerateText(
-  "meta-llama/llama-3-70b-instruct",
+  "meta-llama/llama-3-1-8b-instruct",
   "Hi, who are you?",
-  wx.WithTemperature(0.9),
-  wx.WithTopP(.5),
-  wx.WithTopK(10),
+  wx.WithTemperature(0.4),
   wx.WithMaxNewTokens(512),
 )
 
@@ -57,46 +55,15 @@ Stream Generation:
 
 ```go
 dataChan, _ := client.GenerateTextStream(
-    "meta-llama/llama-3-70b-instruct",
-    "Hi, who are you?",
-    wx.WithTemperature(0.9),
-    wx.WithTopP(.5),
-    wx.WithTopK(10),
-    wx.WithMaxNewTokens(512),
+  "meta-llama/llama-3-1-8b-instruct",
+  "Hi, who are you?",
+  wx.WithTemperature(0.4),
+  wx.WithMaxNewTokens(512),
 )
-
-generatedText := ""
 
 for data := range dataChan {
-    generatedText += data.Text
+  print(data.Text) // print the result as it's being generated
 }
-
-println(generatedText)
-```
-
-Note: The `GenerateTextStream` function is ideal for long text generation tasks, especially when using Server-Sent Events (SSE) for real-time text streaming.
-
-### Customization
-If you want to use Watsonx test environment, choose one of the following methods:
-
-#### Option 1: Using Environment Variables
-
-Specify the Watsonx URL and IAM endpoint using environment variables:
-```sh
-export WATSONX_URL_HOST="us-south.ml.test.cloud.ibm.com"
-export WATSONX_IAM_HOST="iam.test.cloud.ibm.com"
-```
-
-#### Option 2: Using the `NewClient` Function Parameters
-
-Specify the Watsonx URL and IAM endpoint through the parameters of the NewClient function:
-```go
-client, err := wx.NewClient(
-  wx.WithURL("us-south.ml.test.cloud.ibm.com"),
-  wx.WithIAM("iam.test.cloud.ibm.com"),
-  wx.WithWatsonxAPIKey(apiKey),
-  wx.WithWatsonxProjectID(projectID),
-)
 ```
 
 ## Development Setup
@@ -123,6 +90,34 @@ Run the following command to run pre-commit formatting:
 ```sh
 git config --local core.hooksPath .githooks/
 ```
+
+### Using Test Environment
+
+There are two methods for configuring the watsonx client to be used with the test environment:
+
+#### Option 1: Using Environment Variables
+
+Specify the Watsonx URL and IAM endpoint using environment variables:
+
+```sh
+export WATSONX_URL_HOST="us-south.ml.test.cloud.ibm.com"
+export WATSONX_IAM_HOST="iam.test.cloud.ibm.com"
+```
+
+#### Option 2: Using the `NewClient` Function Parameters
+
+Specify the Watsonx URL and IAM endpoint through the parameters of the NewClient function:
+
+```go
+client, err := wx.NewClient(
+  wx.WithURL("us-south.ml.test.cloud.ibm.com"),
+  wx.WithIAM("iam.test.cloud.ibm.com"),
+  wx.WithWatsonxAPIKey(apiKey),
+  wx.WithWatsonxProjectID(projectID),
+)
+```
+
+---
 
 ## Resources
 
