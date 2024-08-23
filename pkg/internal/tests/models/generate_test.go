@@ -161,7 +161,7 @@ func TestGenerateTextWithNoPrompt(t *testing.T) {
 		t.Fatalf("Expected an error, but got nil")
 	}
 
-	if err != nil && err.Error() != "prompt cannot be empty" {
+	if err.Error() != "prompt cannot be empty" {
 		t.Fatalf("Expected error to be 'prompt cannot be empty', but got %v", err)
 	}
 

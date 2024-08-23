@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 const (
@@ -218,7 +219,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 		for scanner.Scan() {
 			line := scanner.Text()
 
-			if !(len(line) > 6 && line[:6] == "data: ") {
+			if !strings.HasPrefix(line, "data: ") {
 				continue
 			}
 
