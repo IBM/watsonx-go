@@ -39,6 +39,7 @@ type embeddingResponse struct {
 	EmbeddingResponse
 }
 
+// EmbedDocuments embeds the given texts using the specified model.
 func (m *Client) EmbedDocuments(model string, texts []string, options ...EmbeddingOption) (EmbeddingResponse, error) {
 	m.CheckAndRefreshToken()
 
@@ -68,10 +69,13 @@ func (m *Client) EmbedDocuments(model string, texts []string, options ...Embeddi
 	return response.EmbeddingResponse, nil
 }
 
+// EmbedQuery embeds the given text using the specified model.
 func (m *Client) EmbedQuery(model string, text string, options ...EmbeddingOption) (EmbeddingResponse, error) {
 	return m.EmbedDocuments(model, []string{text}, options...)
 }
 
+// generateEmbeddingRequest sends a request to the embedding endpoint with the given payload.
+// return the response from the server if and only if the request is successful, code 200.
 func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingResponse, error) {
 	embeddingUrl := m.generateUrlFromEndpoint(EmbeddingEndpoint)
 
