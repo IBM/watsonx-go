@@ -14,10 +14,6 @@ type EmbeddingReturnOptions struct {
 }
 
 func WithEmbeddingTruncateInputTokens(truncateInputTokens uint) EmbeddingOption {
-	if truncateInputTokens < 1 {
-		panic("TruncateInputTokens must be greater or equal to 1")
-	}
-
 	return func(opts *EmbeddingOptions) {
 		opts.TruncateInputTokens = &truncateInputTokens
 	}
