@@ -15,9 +15,10 @@ const (
 )
 
 type EmbeddingPayload struct {
-	ProjectID string   `json:"project_id"`
-	Model     string   `json:"model_id"`
-	Inputs    []string `json:"inputs"`
+	ProjectID  string            `json:"project_id"`
+	Model      string            `json:"model_id"`
+	Inputs     []string          `json:"inputs"`
+	Parameters *EmbeddingOptions `json:"parameters,omitempty"`
 }
 
 type EmbeddingResponse struct {
@@ -29,6 +30,7 @@ type EmbeddingResponse struct {
 
 type EmbeddingResult struct {
 	Embedding []float64 `json:"embedding"`
+	Input     string    `json:"input,omitempty"`
 }
 
 type embeddingResponse struct {
@@ -37,13 +39,21 @@ type embeddingResponse struct {
 	EmbeddingResponse
 }
 
-func (m *Client) EmbedDocuments(model string, texts []string) (EmbeddingResponse, error) {
+func (m *Client) EmbedDocuments(model string, texts []string, options ...EmbeddingOption) (EmbeddingResponse, error) {
 	m.CheckAndRefreshToken()
 
+	opts := &EmbeddingOptions{}
+	for _, opt := range options {
+		if opt != nil {
+			opt(opts)
+		}
+	}
+
 	payload := EmbeddingPayload{
-		ProjectID: m.projectID,
-		Model:     model,
-		Inputs:    texts,
+		ProjectID:  m.projectID,
+		Model:      model,
+		Inputs:     texts,
+		Parameters: opts,
 	}
 
 	response, err := m.generateEmbeddingRequest(payload)
@@ -58,8 +68,8 @@ func (m *Client) EmbedDocuments(model string, texts []string) (EmbeddingResponse
 	return response.EmbeddingResponse, nil
 }
 
-func (m *Client) EmbedQuery(model string, text string) (EmbeddingResponse, error) {
-	return m.EmbedDocuments(model, []string{text})
+func (m *Client) EmbedQuery(model string, text string, options ...EmbeddingOption) (EmbeddingResponse, error) {
+	return m.EmbedDocuments(model, []string{text}, options...)
 }
 
 func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingResponse, error) {
