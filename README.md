@@ -38,6 +38,8 @@ client, err := wx.NewClient(
 )
 ```
 
+#### Generate Text
+
 Generation:
 
 ```go
@@ -63,6 +65,36 @@ dataChan, _ := client.GenerateTextStream(
 
 for data := range dataChan {
   print(data.Text) // print the result as it's being generated
+}
+```
+
+#### Generate Embeddings
+
+Embedding | Single query:
+
+```go
+result, _ := client.EmbedQuery(
+	"ibm/slate-30m-english-rtrvr",
+	"Hello, world!",
+	wx.WithEmbeddingTruncateInputTokens(2), 
+	wx.WithEmbeddingReturnOptions(true),
+)
+
+embeddingVector := result.Results[0].Embedding
+```
+
+Embedding | Multiple docs:
+
+```go
+result, _ := clientl.EmbedDocuments(
+    "ibm/slate-30m-english-rtrvr",
+    []string{"Hello, world!", "Goodbye, world!"},
+    wx.WithEmbeddingTruncateInputTokens(2), 
+    wx.WithEmbeddingReturnOptions(true),
+)
+
+for _, doc := range result.Results {
+    fmt.Println(doc.Embedding)
 }
 ```
 

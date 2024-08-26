@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -88,6 +89,22 @@ func (m *Client) RefreshToken() error {
 	}
 	m.token = token
 	return nil
+}
+
+// generateUrlFromEndpoint generates a URL from the endpoint and the client's configuration
+func (m *Client) generateUrlFromEndpoint(endpoint string) string {
+	params := url.Values{
+		"version": {m.apiVersion},
+	}
+
+	generateTextURL := url.URL{
+		Scheme:   "https",
+		Host:     m.url,
+		Path:     endpoint,
+		RawQuery: params.Encode(),
+	}
+
+	return generateTextURL.String()
 }
 
 func buildBaseURL(region IBMCloudRegion) string {
