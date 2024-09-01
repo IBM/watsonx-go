@@ -144,10 +144,3 @@ func WithRetryIf(retryIf RetryIfFunc) RetryOption {
 		cfg.retryIf = retryIf
 	}
 }
-
-// WithContext sets the context for the retry configuration.
-func WithContext(ctx context.Context) RetryOption {
-	return func(cfg *RetryConfig) {
-		cfg.context = ctx
-	}
-}
