@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +13,16 @@ import (
 
 // TestRetryWithSuccessOnFirstRequest tests the retry mechanism with a server that always returns a 200 status code.
 func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
+	type ResponseType struct {
+		Content string `json:"content"`
+		Status  int    `json:"status"`
+	}
+
+	expectedResponse := ResponseType{Content: "success"}
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"content":"success"}`))
 	}))
 	defer server.Close()
 
@@ -24,7 +33,7 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 		return http.Get(server.URL + "/success")
 	}
 
-	err := wx.Retry(
+	body, err := wx.Retry(
 		sendRequest,
 		wx.WithOnRetry(func(n uint, err error) {
 			retryCount = n
@@ -39,11 +48,19 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 	if retryCount != expectedRetries {
 		t.Errorf("Expected 0 retries, but got %d", retryCount)
 	}
+
+	var response ResponseType
+	if err := json.Unmarshal(body, &response); err != nil {
+		t.Errorf("Failed to unmarshal response body: %v", err)
+	}
+
+	if response != expectedResponse {
+		t.Errorf("Expected response %v, but got %v", expectedResponse, response)
+	}
 }
 
 // TestRetryWithNoSuccessStatusOnAnyRequest tests the retry mechanism with a server that always returns a 429 status code.
 func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
-	// mock server that always returns too many requests status
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	}))
@@ -59,7 +76,7 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 
 	startTime := time.Now()
 
-	err := wx.Retry(
+	body, err := wx.Retry(
 		sendRequest,
 		wx.WithBackoff(backoffTime),
 		wx.WithOnRetry(func(n uint, err error) {
@@ -75,6 +92,10 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 
 	if err == nil {
 		t.Errorf("Expected error, got nil")
+	}
+
+	if string(body) != "" {
+		t.Errorf("Expected empty body, but got %s", string(body))
 	}
 
 	if retryCount != expectedRetries {

@@ -3,20 +3,24 @@ package models
 import (
 	"context"
 	"errors"
+	"io"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
+// OnRetryFunc is a function type that is called on each retry attempt.
 type OnRetryFunc func(attempt uint, err error)
 
-// Timer to track time for a retry
+// Timer interface to abstract time-based operations for retries.
 type Timer interface {
 	After(time.Duration) <-chan time.Time
 }
 
+// RetryIfFunc determines whether a retry should be attempted based on the error.
 type RetryIfFunc func(error) bool
 
+// RetryConfig contains configuration options for the retry mechanism.
 type RetryConfig struct {
 	retries   uint
 	backoff   time.Duration
@@ -27,32 +31,34 @@ type RetryConfig struct {
 	context   context.Context
 }
 
+// RetryOption is a function type for modifying RetryConfig options.
 type RetryOption func(*RetryConfig)
 
+// timerImpl implements the Timer interface using time.After.
 type timerImpl struct{}
 
 func (t timerImpl) After(d time.Duration) <-chan time.Time {
 	return time.After(d)
 }
 
+// newDefaultRetryConfig creates a default RetryConfig with sensible defaults.
 func newDefaultRetryConfig() *RetryConfig {
 	return &RetryConfig{
 		retries:   3,
 		backoff:   1 * time.Second,
-		maxJitter: 0 * time.Second, // no jitter by default
-		onRetry:   func(n uint, err error) {},
-		retryIf:   func(err error) bool { return err != nil }, // default to retry on any error
+		maxJitter: 0 * time.Second,                            // no jitter by default
+		onRetry:   func(n uint, err error) {},                 // no-op onRetry by default
+		retryIf:   func(err error) bool { return err != nil }, // retry on any error by default
 		timer:     &timerImpl{},
 		context:   context.Background(),
 	}
 }
 
-type RetryableFunc func() error
-
+// RetryableFuncWithResponse represents a function that returns an HTTP response or an error.
 type RetryableFuncWithResponse func() (*http.Response, error)
 
 // Retry retries the provided retryableFunc according to the retry configuration options.
-func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) error {
+func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) ([]byte, error) {
 	opts := newDefaultRetryConfig()
 
 	for _, opt := range options {
@@ -64,19 +70,25 @@ func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) erro
 	var lastErr error
 	for n := uint(0); n < opts.retries; n++ {
 		if err := opts.context.Err(); err != nil {
-			return err
+			return nil, err
 		}
 
 		resp, err := retryableFunc()
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			return nil
+			defer resp.Body.Close()
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			return body, nil
 		}
-		if err == nil {
+
+		if err == nil && resp != nil {
 			err = errors.New(resp.Status)
 		}
 
 		if !opts.retryIf(err) {
-			return err
+			return nil, err
 		}
 
 		lastErr = err
@@ -91,11 +103,11 @@ func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) erro
 		select {
 		case <-opts.timer.After(backoffDuration):
 		case <-opts.context.Done():
-			return opts.context.Err()
+			return nil, opts.context.Err()
 		}
 	}
 
-	return lastErr
+	return nil, lastErr
 }
 
 // WithRetries sets the number of retries for the retry configuration.
