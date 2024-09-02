@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
@@ -89,24 +87,19 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.token.value)
 
-	res, err := m.httpClient.Do(req)
+	body, err := Retry(
+		func() (*http.Response, error) {
+			return m.httpClient.Do(req)
+		},
+		WithMaxJitter(100*time.Millisecond),
+	)
 	if err != nil {
 		return embeddingResponse{}, err
 	}
 
-	statusCode := res.StatusCode
-	if statusCode != http.StatusOK {
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			return embeddingResponse{}, fmt.Errorf("request failed with status code %d", statusCode)
-		}
-		return embeddingResponse{}, fmt.Errorf("request failed with status code %d and error %s", statusCode, body)
-	}
-	defer res.Body.Close()
-
 	var embeddingRes embeddingResponse
 
-	if err := json.NewDecoder(res.Body).Decode(&embeddingRes); err != nil {
+	if err := json.Unmarshal(body, &embeddingRes); err != nil {
 		return embeddingResponse{}, err
 	}
 
