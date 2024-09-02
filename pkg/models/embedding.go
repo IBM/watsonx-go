@@ -87,7 +87,7 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.token.value)
 
-	body, err := Retry(
+	resp, err := Retry(
 		func() (*http.Response, error) {
 			return m.httpClient.Do(req)
 		},
@@ -96,10 +96,11 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 	if err != nil {
 		return embeddingResponse{}, err
 	}
+	defer resp.Body.Close()
 
 	var embeddingRes embeddingResponse
 
-	if err := json.Unmarshal(body, &embeddingRes); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&embeddingRes); err != nil {
 		return embeddingResponse{}, err
 	}
 
