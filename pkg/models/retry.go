@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"io"
 	"math/rand"
 	"net/http"
 	"time"
@@ -58,7 +57,7 @@ func newDefaultRetryConfig() *RetryConfig {
 type RetryableFuncWithResponse func() (*http.Response, error)
 
 // Retry retries the provided retryableFunc according to the retry configuration options.
-func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) ([]byte, error) {
+func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) (*http.Response, error) {
 	opts := newDefaultRetryConfig()
 
 	for _, opt := range options {
@@ -75,12 +74,7 @@ func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) ([]b
 
 		resp, err := retryableFunc()
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			return body, nil
+			return resp, nil
 		}
 
 		if err == nil && resp != nil {

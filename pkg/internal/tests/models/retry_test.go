@@ -2,13 +2,12 @@ package test
 
 import (
 	"encoding/json"
+	wx "github.com/IBM/watsonx-go/pkg/models"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
 // TestRetryWithSuccessOnFirstRequest tests the retry mechanism with a server that always returns a 200 status code.
@@ -33,13 +32,14 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 		return http.Get(server.URL + "/success")
 	}
 
-	body, err := wx.Retry(
+	resp, err := wx.Retry(
 		sendRequest,
 		wx.WithOnRetry(func(n uint, err error) {
 			retryCount = n
 			log.Printf("Retrying request after error: %v", err)
 		}),
 	)
+	defer resp.Body.Close()
 
 	if err != nil {
 		t.Errorf("Expected nil, got error: %v", err)
@@ -50,7 +50,7 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 	}
 
 	var response ResponseType
-	if err := json.Unmarshal(body, &response); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Errorf("Failed to unmarshal response body: %v", err)
 	}
 
@@ -76,7 +76,7 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 
 	startTime := time.Now()
 
-	body, err := wx.Retry(
+	resp, err := wx.Retry(
 		sendRequest,
 		wx.WithBackoff(backoffTime),
 		wx.WithOnRetry(func(n uint, err error) {
@@ -94,8 +94,9 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 		t.Errorf("Expected error, got nil")
 	}
 
-	if string(body) != "" {
-		t.Errorf("Expected empty body, but got %s", string(body))
+	if resp != nil {
+		defer resp.Body.Close()
+		t.Errorf("Expected nil response, got %v", resp.Body)
 	}
 
 	if retryCount != expectedRetries {
