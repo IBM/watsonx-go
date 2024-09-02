@@ -83,6 +83,9 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 	}
 
 	req, err := http.NewRequest(http.MethodPost, embeddingUrl, bytes.NewBuffer(payloadJSON))
+	if err != nil {
+		return embeddingResponse{}, err
+	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.token.value)
