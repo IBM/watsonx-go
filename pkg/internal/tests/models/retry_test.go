@@ -2,12 +2,13 @@ package test
 
 import (
 	"encoding/json"
-	wx "github.com/IBM/watsonx-go/pkg/models"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
 // TestRetryWithSuccessOnFirstRequest tests the retry mechanism with a server that always returns a 200 status code.
@@ -39,7 +40,6 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 			log.Printf("Retrying request after error: %v", err)
 		}),
 	)
-	defer resp.Body.Close()
 
 	if err != nil {
 		t.Errorf("Expected nil, got error: %v", err)
@@ -49,6 +49,7 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 		t.Errorf("Expected 0 retries, but got %d", retryCount)
 	}
 
+	defer resp.Body.Close()
 	var response ResponseType
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		t.Errorf("Failed to unmarshal response body: %v", err)
