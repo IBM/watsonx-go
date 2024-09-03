@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 )
@@ -62,7 +61,7 @@ func NewClient(options ...ClientOption) (*Client, error) {
 		apiKey:    opts.apiKey,
 		projectID: opts.projectID,
 
-		httpClient: &http.Client{},
+		httpClient: NewHttpClient(),
 	}
 
 	err := m.RefreshToken()
