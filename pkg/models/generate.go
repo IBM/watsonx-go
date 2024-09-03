@@ -5,8 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -105,19 +103,9 @@ func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextR
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.token.value)
 
-	res, err := m.httpClient.Do(req)
+	res, err := m.httpClient.DoWithRetry(req)
 	if err != nil {
 		return generateTextResponse{}, err
-	}
-
-	statusCode := res.StatusCode
-
-	if statusCode < 200 || statusCode >= 300 {
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			return generateTextResponse{}, fmt.Errorf("request failed with status code %d", statusCode)
-		}
-		return generateTextResponse{}, fmt.Errorf("request failed with status code %d and error %s", statusCode, body)
 	}
 	defer res.Body.Close()
 
@@ -197,23 +185,13 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 		req.Header.Set("Authorization", "Bearer "+m.token.value)
 		req.Header.Set("Accept", "text/event-stream")
 
-		res, err := m.httpClient.Do(req)
+		res, err := m.httpClient.DoWithRetry(req)
 		if err != nil {
 			log.Println("error making request: ", err)
 			return
 		}
+
 		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusOK {
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
-				log.Printf("request failed with status code %d", res.StatusCode)
-			} else {
-				log.Printf("request failed with status code %d and error %s", res.StatusCode, body)
-			}
-			return
-		}
-
 		scanner := bufio.NewScanner(res.Body)
 		for scanner.Scan() {
 			line := scanner.Text()
