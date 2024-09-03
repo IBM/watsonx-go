@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 )
 
 const (
@@ -104,13 +103,7 @@ func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextR
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+m.token.value)
 
-	res, err := Retry(
-		func() (*http.Response, error) {
-			return m.httpClient.Do(req)
-		},
-		WithMaxJitter(100*time.Millisecond),
-	)
-
+	res, err := m.httpClient.DoWithRetry(req)
 	if err != nil {
 		return generateTextResponse{}, err
 	}
@@ -192,13 +185,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 		req.Header.Set("Authorization", "Bearer "+m.token.value)
 		req.Header.Set("Accept", "text/event-stream")
 
-		res, err := Retry(
-			func() (*http.Response, error) {
-				return m.httpClient.Do(req)
-			},
-			WithMaxJitter(100*time.Millisecond),
-		)
-
+		res, err := m.httpClient.DoWithRetry(req)
 		if err != nil {
 			log.Println("error making request: ", err)
 			return
