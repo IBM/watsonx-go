@@ -45,7 +45,7 @@ func newDefaultRetryConfig() *RetryConfig {
 	return &RetryConfig{
 		retries:   3,
 		backoff:   1 * time.Second,
-		maxJitter: 0 * time.Second,                            // no jitter by default
+		maxJitter: 1 * time.Second,
 		onRetry:   func(n uint, err error) {},                 // no-op onRetry by default
 		retryIf:   func(err error) bool { return err != nil }, // retry on any error by default
 		timer:     &timerImpl{},
@@ -161,6 +161,5 @@ func (c *HttpClient) DoWithRetry(req *http.Request) (*http.Response, error) {
 		func() (*http.Response, error) {
 			return c.httpClient.Do(req)
 		},
-		WithMaxJitter(time.Second),
 	)
 }
