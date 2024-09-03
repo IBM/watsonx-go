@@ -138,3 +138,29 @@ func WithRetryIf(retryIf RetryIfFunc) RetryOption {
 		cfg.retryIf = retryIf
 	}
 }
+
+// Custom wrapper for http.Client that implements the Doer interface.
+// - Do
+// - DoWithRetry
+type HttpClient struct {
+	httpClient *http.Client
+}
+
+func NewHttpClient() *HttpClient {
+	return &HttpClient{
+		httpClient: &http.Client{},
+	}
+}
+
+func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
+	return c.httpClient.Do(req)
+}
+
+func (c *HttpClient) DoWithRetry(req *http.Request) (*http.Response, error) {
+	return Retry(
+		func() (*http.Response, error) {
+			return c.httpClient.Do(req)
+		},
+		WithMaxJitter(time.Second),
+	)
+}
