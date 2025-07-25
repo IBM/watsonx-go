@@ -33,6 +33,9 @@ Or pass in the required secrets directly:
 
 ```go
 client, err := wx.NewClient(
+  wx.WithClientRetryConfig(wx.NewRetryConfig(
+    wx.WithReturnHTTPStatusAsErr(false)),
+  ),
   wx.WithWatsonxAPIKey(apiKey),
   wx.WithWatsonxProjectID(projectID),
 )
@@ -44,7 +47,7 @@ Generation:
 
 ```go
 result, _ := client.GenerateText(
-  "meta-llama/llama-3-1-8b-instruct",
+  "meta-llama/llama-3-3-70b-instruct",
   "Hi, who are you?",
   wx.WithTemperature(0.4),
   wx.WithMaxNewTokens(512),
@@ -57,7 +60,7 @@ Stream Generation:
 
 ```go
 dataChan, _ := client.GenerateTextStream(
-  "meta-llama/llama-3-1-8b-instruct",
+  "meta-llama/llama-3-3-70b-instruct",
   "Hi, who are you?",
   wx.WithTemperature(0.4),
   wx.WithMaxNewTokens(512),
@@ -142,6 +145,9 @@ Specify the Watsonx URL and IAM endpoint through the parameters of the NewClient
 
 ```go
 client, err := wx.NewClient(
+  	wx.WithClientRetryConfig(wx.NewRetryConfig(
+			wx.WithReturnHTTPStatusAsErr(false)),
+		),
   wx.WithURL("us-south.ml.test.cloud.ibm.com"),
   wx.WithIAM("iam.test.cloud.ibm.com"),
   wx.WithWatsonxAPIKey(apiKey),

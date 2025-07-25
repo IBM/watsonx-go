@@ -7,6 +7,11 @@ import (
 	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
+const (
+	modelLlama3  = "meta-llama/llama-3-3-70b-instruct"
+	modelFlanUL2 = "google/flan-ul2"
+)
+
 func TestClientCreationWithEnvVars(t *testing.T) {
 	_, err := wx.NewClient()
 
@@ -26,6 +31,9 @@ func TestClientCreationWithPassing(t *testing.T) {
 	}
 
 	_, err := wx.NewClient(
+		wx.WithClientRetryConfig(wx.NewRetryConfig(
+			wx.WithReturnHTTPStatusAsErr(false),
+		)),
 		wx.WithWatsonxAPIKey(apiKey),
 		wx.WithWatsonxProjectID(projectID),
 	)
@@ -51,7 +59,7 @@ func TestNilOptions(t *testing.T) {
 	client := getClient(t)
 
 	_, err := client.GenerateText(
-		"meta-llama/llama-3-70b-instruct",
+		modelLlama3,
 		"What day is it?",
 		nil,
 	)
@@ -64,7 +72,7 @@ func TestValidPrompt(t *testing.T) {
 	client := getClient(t)
 
 	_, err := client.GenerateText(
-		"meta-llama/llama-3-70b-instruct",
+		modelLlama3,
 		"Test prompt",
 	)
 	if err != nil {
@@ -76,7 +84,7 @@ func TestGenerateText(t *testing.T) {
 	client := getClient(t)
 
 	result, err := client.GenerateText(
-		"meta-llama/llama-3-70b-instruct",
+		modelLlama3,
 		"Hi, who are you?",
 		wx.WithTemperature(0.9),
 		wx.WithTopP(.5),
@@ -95,7 +103,7 @@ func TestGenerateTextStream(t *testing.T) {
 	client := getClient(t)
 
 	dataChan, err := client.GenerateTextStream(
-		"google/flan-ul2",
+		modelFlanUL2,
 		"Hi, who are you?",
 		wx.WithTemperature(0.9),
 		wx.WithTopP(.5),
@@ -126,7 +134,7 @@ func TestGenerateTextWithNoPrompt(t *testing.T) {
 	client := getClient(t)
 
 	dataChan, err := client.GenerateTextStream(
-		"google/flan-ul2",
+		modelFlanUL2,
 		"",
 		wx.WithTemperature(0.9),
 		wx.WithTopP(.5),
@@ -158,7 +166,7 @@ func TestGenerateTextWithNilOptions(t *testing.T) {
 	client := getClient(t)
 
 	result, err := client.GenerateText(
-		"meta-llama/llama-3-70b-instruct",
+		modelLlama3,
 		"Who are you?",
 		nil,
 	)

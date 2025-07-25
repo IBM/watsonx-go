@@ -1,9 +1,10 @@
 package test
 
 import (
-	wx "github.com/IBM/watsonx-go/pkg/models"
 	"os"
 	"testing"
+
+	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
 func getClient(t *testing.T) *wx.Client {
@@ -17,6 +18,9 @@ func getClient(t *testing.T) *wx.Client {
 	}
 
 	client, err := wx.NewClient(
+		wx.WithClientRetryConfig(wx.NewRetryConfig(
+			wx.WithReturnHTTPStatusAsErr(false)),
+		),
 		wx.WithWatsonxAPIKey(apiKey),
 		wx.WithWatsonxProjectID(projectID),
 	)

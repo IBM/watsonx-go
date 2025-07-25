@@ -10,6 +10,8 @@ type ClientOptions struct {
 
 	apiKey    WatsonxAPIKey
 	projectID WatsonxProjectID
+
+	retryConfig *RetryConfig
 }
 
 func WithURL(url string) ClientOption {
@@ -45,5 +47,11 @@ func WithWatsonxAPIKey(watsonxAPIKey WatsonxAPIKey) ClientOption {
 func WithWatsonxProjectID(projectID WatsonxProjectID) ClientOption {
 	return func(o *ClientOptions) {
 		o.projectID = projectID
+	}
+}
+
+func WithClientRetryConfig(retryConfig *RetryConfig) ClientOption {
+	return func(o *ClientOptions) {
+		o.retryConfig = retryConfig
 	}
 }

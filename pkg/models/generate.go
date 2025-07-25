@@ -77,7 +77,7 @@ func (m *Client) GenerateText(model, prompt string, options ...GenerateOption) (
 	}
 
 	if len(response.Results) == 0 {
-		return GenerateTextResult{}, errors.New("no result recieved")
+		return GenerateTextResult{}, errors.New("no result received")
 	}
 
 	result := response.Results[0]

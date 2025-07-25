@@ -1,9 +1,10 @@
 package test
 
 import (
-	wx "github.com/IBM/watsonx-go/pkg/models"
 	"reflect"
 	"testing"
+
+	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
 const (
