@@ -29,6 +29,10 @@ const (
 	Error              StopReason = "error"         // Error encountered
 )
 
+const (
+	errorGenerateBodyBufferSize = 1024
+)
+
 type GenerateTextResult struct {
 	Text                string     `json:"generated_text"`
 	GeneratedTokenCount int        `json:"generated_token_count"`
@@ -95,7 +99,7 @@ func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextR
 		return generateTextResponse{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, textUrl, bytes.NewBuffer(payloadJSON))
+	req, err := http.NewRequest(http.MethodPost, textUrl, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return generateTextResponse{}, err
 	}
@@ -108,6 +112,14 @@ func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextR
 		return generateTextResponse{}, err
 	}
 	defer res.Body.Close()
+
+	// Check for successful status code
+	if res.StatusCode != http.StatusOK {
+		// Read response body for error details
+		body := make([]byte, errorGenerateBodyBufferSize)
+		n, _ := res.Body.Read(body)
+		return generateTextResponse{}, errors.New(string(body[:n]))
+	}
 
 	var generateRes generateTextResponse
 
@@ -175,7 +187,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 			return
 		}
 
-		req, err := http.NewRequest(http.MethodPost, streamUrl, bytes.NewBuffer(payloadJSON))
+		req, err := http.NewRequest(http.MethodPost, streamUrl, bytes.NewReader(payloadJSON))
 		if err != nil {
 			log.Println("error creating request: ", err)
 			return

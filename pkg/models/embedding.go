@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"time"
 )
 
 const (
 	EmbeddingEndpoint string = "/ml/v1/text/embeddings"
+)
+
+const (
+	errorEmbeddingBodyBufferSize = 1024
 )
 
 type EmbeddingPayload struct {
@@ -82,9 +87,14 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 		return embeddingResponse{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, embeddingUrl, bytes.NewBuffer(payloadJSON))
+	req, err := http.NewRequest(http.MethodPost, embeddingUrl, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return embeddingResponse{}, err
+	}
+
+	// Enable request body to be recreated for retries
+	req.GetBody = func() (io.ReadCloser, error) {
+		return io.NopCloser(bytes.NewReader(payloadJSON)), nil
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -95,6 +105,14 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 		return embeddingResponse{}, err
 	}
 	defer res.Body.Close()
+
+	// Check for successful status code
+	if res.StatusCode != http.StatusOK {
+		// Read response body for error details
+		body := make([]byte, errorEmbeddingBodyBufferSize)
+		n, _ := res.Body.Read(body)
+		return embeddingResponse{}, errors.New(string(body[:n]))
+	}
 
 	var embeddingRes embeddingResponse
 

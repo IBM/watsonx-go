@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 const (
 	modelLlama3  = "meta-llama/llama-3-3-70b-instruct"
 	modelFlanUL2 = "google/flan-ul2"
+	modelInvalid = "invalid-model-test"
 )
 
 func TestClientCreationWithEnvVars(t *testing.T) {
@@ -47,11 +49,11 @@ func TestEmptyPromptError(t *testing.T) {
 	client := getClient(t)
 
 	_, err := client.GenerateText(
-		"dumby model",
+		modelLlama3,
 		"",
 	)
 	if err == nil {
-		t.Fatalf("Expected error for an empty prompt, but got nil")
+		t.Fatal("Expected error for an empty prompt, but got nil")
 	}
 }
 
@@ -68,15 +70,97 @@ func TestNilOptions(t *testing.T) {
 	}
 }
 
+func TestInvalidParameter(t *testing.T) {
+	client := getClient(t)
+
+	result, err := client.GenerateText(
+		modelLlama3,
+		"What day is it?",
+		wx.WithTemperature(100), // Invalid temperature
+	)
+	if err == nil {
+		t.Fatal("Expected error for invalid parameter but got nil")
+	}
+	if result.Text != "" {
+		t.Fatal("Expected empty response but got:", result.Text)
+	}
+
+	errorMessage := parseResponseErrMessage(t, err)
+	if errorMessage == nil {
+		t.Fatalf("Expected JSON error message, but got: %v", err)
+	}
+
+	if errorMessage.StatusCode != 400 {
+		t.Fatalf("Expected status code 400, but got: %d", errorMessage.StatusCode)
+	}
+	expectedErrText := "Json document validation error: parameters.temperature should not be greater than 2.0"
+	if len(errorMessage.Errors) == 0 || errorMessage.Errors[0].Message != expectedErrText {
+		t.Fatalf("Expected error message to be %s, but got: %v", expectedErrText, errorMessage.Errors[0].Message)
+	}
+}
+
+func TestInvalidModel(t *testing.T) {
+	client := getClient(t)
+
+	result, err := client.GenerateText(
+		modelInvalid,
+		"What day is it?",
+	)
+
+	if err == nil {
+		t.Fatal("Expected error for invalid model but got nil")
+	}
+	if result.Text != "" {
+		t.Fatal("Expected empty response but got:", result.Text)
+	}
+
+	errorMessage := parseResponseErrMessage(t, err)
+	if errorMessage == nil {
+		t.Fatalf("Expected JSON error message, but got: %v", err)
+	}
+
+	if errorMessage.StatusCode != 404 {
+		t.Fatalf("Expected status code 404, but got: %d", errorMessage.StatusCode)
+	}
+	expectedErrText := fmt.Sprintf("Model '%s' is not supported", modelInvalid)
+	if len(errorMessage.Errors) == 0 || errorMessage.Errors[0].Message != expectedErrText {
+		t.Fatalf("Expected error message to be %s, but got: %v", expectedErrText, errorMessage.Errors[0].Message)
+	}
+}
+
+func TestInvalidModelWithLegacyRetry(t *testing.T) {
+	client := getClientWithLegacyRetry(t)
+
+	result, err := client.GenerateText(
+		modelInvalid,
+		"What day is it?",
+	)
+
+	if err == nil {
+		t.Fatal("Expected error for invalid model but got nil")
+	}
+	if result.Text != "" {
+		t.Fatal("Expected empty response but got:", result.Text)
+	}
+	expectedErrText := "404 Not Found"
+	if err.Error() != expectedErrText {
+		t.Fatalf("Expected error to be '%s', but got %v", expectedErrText, err)
+	}
+}
+
 func TestValidPrompt(t *testing.T) {
 	client := getClient(t)
 
-	_, err := client.GenerateText(
+	result, err := client.GenerateText(
 		modelLlama3,
 		"Test prompt",
 	)
+
 	if err != nil {
 		t.Fatalf("Expected no error, but got an error: %v", err)
+	}
+	if result.Text == "" {
+		t.Fatal("Expected a result, but got an empty string")
 	}
 }
 
@@ -145,7 +229,7 @@ func TestGenerateTextWithNoPrompt(t *testing.T) {
 	)
 
 	if err == nil {
-		t.Fatalf("Expected an error, but got nil")
+		t.Fatal("Expected an error, but got nil")
 	}
 
 	if err.Error() != "prompt cannot be empty" {
@@ -170,6 +254,7 @@ func TestGenerateTextWithNilOptions(t *testing.T) {
 		"Who are you?",
 		nil,
 	)
+
 	if err != nil {
 		t.Fatalf("Expected no error, but got an error: %v", err)
 	}

@@ -29,14 +29,21 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 	var retryCount uint = 0
 	var expectedRetries uint = 0
 
-	sendRequest := func() (*http.Response, error) {
-		return http.Get(server.URL + "/success")
+	sendRequest := func(req *http.Request) (*http.Response, error) {
+		return http.DefaultClient.Do(req)
+	}
+
+	req, err := http.NewRequest("GET", server.URL+"/success", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
 	}
 
 	resp, err := wx.Retry(
 		sendRequest,
+		req,
 		wx.NewRetryConfig(
-			wx.WithOnRetry(func(n uint, err error) {
+			wx.WithReturnHTTPStatusAsErr(false),
+			wx.WithOnRetryV2(func(n uint, resp *http.Response, err error) {
 				retryCount = n
 				log.Printf("Retrying request after error: %v", err)
 			}),
@@ -73,14 +80,20 @@ func TestLegacyRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 	var retryCount uint = 0
 	var expectedRetries uint = 3
 
-	sendRequest := func() (*http.Response, error) {
-		return http.Get(server.URL + "/notfound")
+	sendRequest := func(req *http.Request) (*http.Response, error) {
+		return http.DefaultClient.Do(req)
 	}
 
 	startTime := time.Now()
 
+	req, err := http.NewRequest("GET", server.URL+"/notfound", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
 	resp, err := wx.Retry(
 		sendRequest,
+		req,
 		wx.NewRetryConfig(
 			wx.WithBackoff(backoffTime),
 			wx.WithOnRetry(func(n uint, err error) {
@@ -126,16 +139,22 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 	var retryCount uint = 0
 	var expectedRetries uint = 3
 
-	sendRequest := func() (*http.Response, error) {
-		return http.Get(server.URL + "/notfound")
+	sendRequest := func(req *http.Request) (*http.Response, error) {
+		return http.DefaultClient.Do(req)
 	}
 
 	startTime := time.Now()
 
+	req, err := http.NewRequest("GET", server.URL+"/notfound", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
 	resp, err := wx.Retry(
 		sendRequest,
+		req,
 		wx.NewRetryConfig(
-			wx.WithReturnHTTPStatusAsErr(false), // Use new behavior: only return actual network errors
+			wx.WithReturnHTTPStatusAsErr(false),
 			wx.WithBackoff(backoffTime),
 			wx.WithOnRetryV2(func(n uint, resp *http.Response, err error) {
 				retryCount = n

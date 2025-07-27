@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
@@ -22,8 +23,8 @@ type Timer interface {
 // RetryIfFunc determines whether a retry should be attempted based on the error.
 type RetryIfFunc func(error) bool
 
-// RetryIfFuncV2 determines whether a retry should be attempted based on the response.
-type RetryIfFuncV2 func(*http.Response, error) bool
+// RetryIfV2Func determines whether a retry should be attempted based on the response.
+type RetryIfV2Func func(*http.Response, error) bool
 
 // RetryConfig contains configuration options for the retry mechanism.
 type RetryConfig struct {
@@ -33,7 +34,7 @@ type RetryConfig struct {
 	onRetry               OnRetryFunc   // Legacy callback for retries
 	onRetryV2             OnRetryV2Func // Callback for retries with response
 	retryIf               RetryIfFunc   // Legacy error-based retry function
-	retryIfV2             RetryIfFuncV2 // New response-based retry function
+	retryIfV2             RetryIfV2Func // New response-based retry function
 	timer                 Timer
 	context               context.Context
 	returnHTTPStatusAsErr bool // When true, use legacy behavior: convert HTTP status to errors
@@ -60,7 +61,7 @@ func NewDefaultRetryConfig() *RetryConfig {
 		retryIf:   func(err error) bool { return err != nil },      // retry on any error by default (legacy)
 		retryIfV2: func(resp *http.Response, err error) bool {
 			return err != nil || (resp != nil && resp.StatusCode >= http.StatusBadRequest)
-		}, // retry on any error or 4xx/5xx response by default (new)
+		}, // Retry on any error or 4xx/5xx response by default
 		timer:                 &timerImpl{},
 		context:               context.Background(),
 		returnHTTPStatusAsErr: true, // Legacy behavior: convert HTTP status to errors
@@ -90,10 +91,23 @@ func NewRetryConfig(options ...RetryOption) *RetryConfig {
 }
 
 // RetryableFuncWithResponse represents a function that returns an HTTP response or an error.
-type RetryableFuncWithResponse func() (*http.Response, error)
+type RetryableFuncWithResponse func(req *http.Request) (*http.Response, error)
+
+func prepareRequest(req *http.Request) error {
+	// Always refresh the body using GetBody if available, otherwise the
+	// body will have been already consumed in previous send attempts.
+	if req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return fmt.Errorf("error getting request body: %w", err)
+		}
+		req.Body = body
+	}
+	return nil
+}
 
 // Retry retries the provided retryableFunc according to the retry configuration options.
-func Retry(retryableFunc RetryableFuncWithResponse, retryConfig *RetryConfig) (*http.Response, error) {
+func Retry(retryableFunc RetryableFuncWithResponse, req *http.Request, retryConfig *RetryConfig) (*http.Response, error) {
 	var lastErr error
 	var lastResp *http.Response
 
@@ -102,8 +116,14 @@ func Retry(retryableFunc RetryableFuncWithResponse, retryConfig *RetryConfig) (*
 			return nil, err
 		}
 
-		resp, err := retryableFunc()
+		if n > 0 {
+			// Prepare the request body again for retries
+			if err := prepareRequest(req); err != nil {
+				return nil, err
+			}
+		}
 
+		resp, err := retryableFunc(req)
 		// If the response is successful, return it immediately
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			return resp, nil
@@ -112,28 +132,24 @@ func Retry(retryableFunc RetryableFuncWithResponse, retryConfig *RetryConfig) (*
 		// Store the response and error for potential return
 		lastResp = resp
 		lastErr = err
-		statusAsErr := errors.New(resp.Status)
-		errResult := err
 
 		// Determine if we should retry based on error or response
-		retryIfV1Err := err
 		shouldRetry := false
 		if err == nil && resp != nil {
-			retryIfV1Err = statusAsErr
-			// set errResult and lastErr based on behavior flag
+			// Set errResult and lastErr based on behavior flag
 			if retryConfig.returnHTTPStatusAsErr {
-				errResult = statusAsErr
-				lastErr = statusAsErr
+				lastErr = errors.New(resp.Status)
+				lastResp = nil // Clear lastResp if returning HTTP status as error
 			}
 		}
 
-		shouldRetry = retryConfig.retryIf(retryIfV1Err) || retryConfig.retryIfV2(resp, err)
+		shouldRetry = retryConfig.retryIf(lastErr) || retryConfig.retryIfV2(lastResp, lastErr)
 		if !shouldRetry {
-			return resp, errResult
+			break
 		}
 
-		retryConfig.onRetry(n+1, statusAsErr)
-		retryConfig.onRetryV2(n+1, resp, err)
+		retryConfig.onRetry(n+1, lastErr)
+		retryConfig.onRetryV2(n+1, lastResp, lastErr)
 
 		// Apply backoff and jitter
 		backoffDuration := retryConfig.backoff
@@ -148,13 +164,6 @@ func Retry(retryableFunc RetryableFuncWithResponse, retryConfig *RetryConfig) (*
 			return nil, retryConfig.context.Err()
 		}
 	}
-
-	if retryConfig.returnHTTPStatusAsErr {
-		// Legacy behavior: convert HTTP status to error if no network error
-		return nil, lastErr
-	}
-
-	// New behavior: only return actual network errors
 	return lastResp, lastErr
 }
 
@@ -203,7 +212,7 @@ func WithRetryIf(retryIf RetryIfFunc) RetryOption {
 // WithRetryIfV2 sets the condition to determine whether to retry based on the response.
 // This enables the new response-based retry logic and automatically enables the
 // new behavior flags.
-func WithRetryIfV2(retryIf RetryIfFuncV2) RetryOption {
+func WithRetryIfV2(retryIf RetryIfV2Func) RetryOption {
 	return func(cfg *RetryConfig) {
 		cfg.retryIf = func(err error) bool { return false } // Disable legacy retryIf
 		cfg.onRetry = func(n uint, err error) {}            // Disable legacy onRetry
@@ -219,6 +228,14 @@ func WithRetryIfV2(retryIf RetryIfFuncV2) RetryOption {
 // 4xx/5xx status) return nil error (new correct behavior).
 func WithReturnHTTPStatusAsErr(enabled bool) RetryOption {
 	return func(cfg *RetryConfig) {
+		if enabled {
+			cfg.retryIfV2 = func(resp *http.Response, err error) bool { return false } // Disable retryIfV2
+			cfg.onRetryV2 = func(n uint, resp *http.Response, err error) {}            // Disable onRetryV2
+		} else {
+			cfg.retryIf = func(err error) bool { return false } // Disable legacy retryIf
+			cfg.onRetry = func(n uint, err error) {}            // Disable legacy onRetry
+		}
+
 		cfg.returnHTTPStatusAsErr = enabled
 	}
 }
@@ -272,9 +289,10 @@ func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
 
 func (c *HttpClient) DoWithRetry(req *http.Request) (*http.Response, error) {
 	return Retry(
-		func() (*http.Response, error) {
+		func(req *http.Request) (*http.Response, error) {
 			return c.httpClient.Do(req)
 		},
+		req,
 		c.retryConfig,
 	)
 }
