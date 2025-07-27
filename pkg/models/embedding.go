@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"time"
 )
@@ -90,11 +89,6 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 	req, err := http.NewRequest(http.MethodPost, embeddingUrl, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return embeddingResponse{}, err
-	}
-
-	// Enable request body to be recreated for retries
-	req.GetBody = func() (io.ReadCloser, error) {
-		return io.NopCloser(bytes.NewReader(payloadJSON)), nil
 	}
 
 	req.Header.Set("Content-Type", "application/json")
