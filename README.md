@@ -68,6 +68,59 @@ for data := range dataChan {
 }
 ```
 
+#### Chat Completions
+
+Simple chat with a single message:
+
+```go
+response, _ := client.SimpleChat(
+  "meta-llama/llama-3-3-70b-instruct",
+  "What is the capital of France?",
+  wx.WithChatTemperature(0.3),
+  wx.WithChatMaxTokens(100),
+)
+
+println(response) // prints the assistant's response text
+```
+
+Multi-turn conversation:
+
+```go
+messages := []wx.ChatMessage{
+  wx.CreateSystemMessage("You are a helpful assistant."),
+  wx.CreateUserMessage("What is the capital of France?"),
+}
+
+response, _ := client.Chat(
+  "meta-llama/llama-3-3-70b-instruct",
+  messages,
+  wx.WithChatTemperature(0.3),
+  wx.WithChatMaxTokens(100),
+)
+
+content := response.Choices[0].Message.Content.GetText()
+println(content)
+```
+
+Chat with JSON mode:
+
+```go
+messages := []wx.ChatMessage{
+  wx.CreateSystemMessage("You respond in JSON format."),
+  wx.CreateUserMessage("What is 2+2? Respond with {\"answer\": number}"),
+}
+
+response, _ := client.Chat(
+  "meta-llama/llama-3-3-70b-instruct",
+  messages,
+  wx.WithChatJSONMode(),
+  wx.WithChatTemperature(0.1),
+)
+
+jsonResponse := response.Choices[0].Message.Content.GetText()
+println(jsonResponse) // {"answer": 4}
+```
+
 #### Generate Embeddings
 
 Embedding | Single query:
