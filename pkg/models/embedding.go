@@ -12,6 +12,10 @@ const (
 	EmbeddingEndpoint string = "/ml/v1/text/embeddings"
 )
 
+const (
+	errorEmbeddingBodyBufferSize = 1024
+)
+
 type EmbeddingPayload struct {
 	ProjectID  string            `json:"project_id"`
 	Model      string            `json:"model_id"`
@@ -82,7 +86,7 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 		return embeddingResponse{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, embeddingUrl, bytes.NewBuffer(payloadJSON))
+	req, err := http.NewRequest(http.MethodPost, embeddingUrl, bytes.NewReader(payloadJSON))
 	if err != nil {
 		return embeddingResponse{}, err
 	}
@@ -95,6 +99,14 @@ func (m *Client) generateEmbeddingRequest(payload EmbeddingPayload) (embeddingRe
 		return embeddingResponse{}, err
 	}
 	defer res.Body.Close()
+
+	// Check for successful status code
+	if res.StatusCode != http.StatusOK {
+		// Read response body for error details
+		body := make([]byte, errorEmbeddingBodyBufferSize)
+		n, _ := res.Body.Read(body)
+		return embeddingResponse{}, errors.New(string(body[:n]))
+	}
 
 	var embeddingRes embeddingResponse
 

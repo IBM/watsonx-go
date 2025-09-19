@@ -1,14 +1,17 @@
 package test
 
 import (
-	wx "github.com/IBM/watsonx-go/pkg/models"
+	"fmt"
 	"reflect"
 	"testing"
+
+	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
 const (
-	EmbeddingModelId        = "ibm/slate-30m-english-rtrvr"
-	EmbeddingModelDimension = 384
+	EmbeddingModelId                   = "ibm/slate-30m-english-rtrvr"
+	modelLlama3DoesNotSupportEmbedding = "meta-llama/llama-3-3-70b-instruct"
+	EmbeddingModelDimension            = 384
 )
 
 func TestEmbeddingSingleQuery(t *testing.T) {
@@ -78,7 +81,7 @@ func TestEmbeddingSingleQueryWithOptions(t *testing.T) {
 	}
 
 	if reflect.DeepEqual(response.Results[0].Embedding, responseNoOptions.Results[0].Embedding) {
-		t.Fatalf("Expected different embeddings with and without options, but got the same")
+		t.Fatal("Expected different embeddings with and without options, but got the same")
 	}
 }
 
@@ -113,5 +116,30 @@ func TestEmbeddingMultipleQueries(t *testing.T) {
 
 	if response.Model != EmbeddingModelId {
 		t.Fatalf("Expected model to be %s, but got %s", EmbeddingModelId, response.Model)
+	}
+}
+
+func TestEmbeddingModelDoesNotSupportEmbedding(t *testing.T) {
+	client := getClient(t)
+
+	text := "Hello, world!"
+
+	_, err := client.EmbedQuery(modelLlama3DoesNotSupportEmbedding, text)
+
+	if err == nil {
+		t.Fatal("Expected error for invalid model but got nil")
+	}
+
+	errorMessage := parseResponseErrMessage(t, err)
+	if errorMessage == nil {
+		t.Fatalf("Expected JSON error message, but got: %v", err)
+	}
+
+	if errorMessage.StatusCode != 400 {
+		t.Fatalf("Expected status code 400, but got: %d", errorMessage.StatusCode)
+	}
+	expectedErrText := fmt.Sprintf("Model '%s' does not support function 'function_embedding'", modelLlama3DoesNotSupportEmbedding)
+	if len(errorMessage.Errors) == 0 || errorMessage.Errors[0].Message != expectedErrText {
+		t.Fatalf("Expected error message to be %s, but got: %v", expectedErrText, errorMessage.Errors[0].Message)
 	}
 }

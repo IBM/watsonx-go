@@ -29,16 +29,25 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 	var retryCount uint = 0
 	var expectedRetries uint = 0
 
-	sendRequest := func() (*http.Response, error) {
-		return http.Get(server.URL + "/success")
+	sendRequest := func(req *http.Request) (*http.Response, error) {
+		return http.DefaultClient.Do(req)
+	}
+
+	req, err := http.NewRequest("GET", server.URL+"/success", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
 	}
 
 	resp, err := wx.Retry(
 		sendRequest,
-		wx.WithOnRetry(func(n uint, err error) {
-			retryCount = n
-			log.Printf("Retrying request after error: %v", err)
-		}),
+		req,
+		wx.NewRetryConfig(
+			wx.WithReturnHTTPStatusAsErr(false),
+			wx.WithOnRetryV2(func(n uint, resp *http.Response, err error) {
+				retryCount = n
+				log.Printf("Retrying request after error: %v", err)
+			}),
+		),
 	)
 
 	if err != nil {
@@ -60,8 +69,8 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 	}
 }
 
-// TestRetryWithNoSuccessStatusOnAnyRequest tests the retry mechanism with a server that always returns a 429 status code.
-func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
+// TestLegacyRetryWithNoSuccessStatusOnAnyRequest tests the retry mechanism with a server that always returns a 429 status code.
+func TestLegacyRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTooManyRequests)
 	}))
@@ -71,19 +80,27 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 	var retryCount uint = 0
 	var expectedRetries uint = 3
 
-	sendRequest := func() (*http.Response, error) {
-		return http.Get(server.URL + "/notfound")
+	sendRequest := func(req *http.Request) (*http.Response, error) {
+		return http.DefaultClient.Do(req)
 	}
 
 	startTime := time.Now()
 
+	req, err := http.NewRequest("GET", server.URL+"/notfound", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
 	resp, err := wx.Retry(
 		sendRequest,
-		wx.WithBackoff(backoffTime),
-		wx.WithOnRetry(func(n uint, err error) {
-			retryCount = n
-			log.Printf("Retrying request after error: %v", err)
-		}),
+		req,
+		wx.NewRetryConfig(
+			wx.WithBackoff(backoffTime),
+			wx.WithOnRetry(func(n uint, err error) {
+				retryCount = n
+				log.Printf("Retrying request after error: %v", err)
+			}),
+		),
 	)
 
 	endTime := time.Now()
@@ -98,6 +115,81 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 	if resp != nil {
 		defer resp.Body.Close()
 		t.Errorf("Expected nil response, got %v", resp.Body)
+	}
+
+	if retryCount != expectedRetries {
+		t.Errorf("Expected 3 retries, but got %d", retryCount)
+	}
+
+	if elapsedTime < expectedMinimumTime {
+		t.Errorf("Expected minimum time of %v, but got %v", expectedMinimumTime, elapsedTime)
+	}
+}
+
+// TestRetryWithNoSuccessStatusOnAnyRequest tests the retry mechanism with a server that always returns a 429 status code.
+func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
+	expectedStatusCode := http.StatusTooManyRequests
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(expectedStatusCode)
+	}))
+	defer server.Close()
+
+	var backoffTime = 2 * time.Second
+	var retryCount uint = 0
+	var expectedRetries uint = 3
+
+	sendRequest := func(req *http.Request) (*http.Response, error) {
+		return http.DefaultClient.Do(req)
+	}
+
+	startTime := time.Now()
+
+	req, err := http.NewRequest("GET", server.URL+"/notfound", nil)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+
+	resp, err := wx.Retry(
+		sendRequest,
+		req,
+		wx.NewRetryConfig(
+			wx.WithReturnHTTPStatusAsErr(false),
+			wx.WithBackoff(backoffTime),
+			wx.WithOnRetryV2(func(n uint, resp *http.Response, err error) {
+				retryCount = n
+				if err != nil {
+					t.Errorf("In OnRetry, expected nil, got error: %v", err)
+				}
+
+				if resp == nil {
+					t.Errorf("In OnRetry, expected non-nil response, got nil")
+				}
+
+				if resp != nil && resp.StatusCode != expectedStatusCode {
+					t.Errorf("Expected status code %d, got %d", expectedStatusCode, resp.StatusCode)
+				}
+
+				log.Printf("Retrying request after response with status code: %d", resp.StatusCode)
+			}),
+		),
+	)
+
+	endTime := time.Now()
+
+	elapsedTime := endTime.Sub(startTime)
+	expectedMinimumTime := backoffTime * time.Duration(expectedRetries)
+
+	if err != nil {
+		t.Errorf("Expected nil, got error: %v", err)
+	}
+
+	if resp == nil {
+		t.Errorf("Expected non-nil response, got nil")
+	}
+
+	if resp != nil && resp.StatusCode != expectedStatusCode {
+		t.Errorf("Expected status code %d, got %d", expectedStatusCode, resp.StatusCode)
 	}
 
 	if retryCount != expectedRetries {
