@@ -26,7 +26,7 @@ type Client struct {
 
 func NewClient(options ...ClientOption) (*Client, error) {
 
-	opts := defaulClientOptions()
+	opts := defaultClientOptions()
 	for _, opt := range options {
 		if opt != nil {
 			opt(opts)
@@ -61,7 +61,9 @@ func NewClient(options ...ClientOption) (*Client, error) {
 		apiKey:    opts.apiKey,
 		projectID: opts.projectID,
 
-		httpClient: NewHttpClient(),
+		httpClient: NewHttpClient(
+			WithRetryConfig(opts.retryConfig),
+		),
 	}
 
 	err := m.RefreshToken()
@@ -110,7 +112,7 @@ func buildBaseURL(region IBMCloudRegion) string {
 	return fmt.Sprintf(BaseURLFormatStr, region)
 }
 
-func defaulClientOptions() *ClientOptions {
+func defaultClientOptions() *ClientOptions {
 	return &ClientOptions{
 		URL:        os.Getenv(WatsonxURLEnvVarName),
 		IAM:        os.Getenv(WatsonxIAMEnvVarName),
@@ -119,5 +121,7 @@ func defaulClientOptions() *ClientOptions {
 
 		apiKey:    os.Getenv(WatsonxAPIKeyEnvVarName),
 		projectID: os.Getenv(WatsonxProjectIDEnvVarName),
+
+		retryConfig: NewDefaultRetryConfig(),
 	}
 }

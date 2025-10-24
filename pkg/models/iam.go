@@ -32,9 +32,9 @@ func GenerateToken(client Doer, watsonxApiKey WatsonxAPIKey, iamCloudHost string
 	payload := strings.NewReader(values.Encode())
 
 	iamTokenEndpoint := url.URL{
-		Scheme:   "https",
-		Host:     iamCloudHost,
-		Path:     TokenPath,
+		Scheme: "https",
+		Host:   iamCloudHost,
+		Path:   TokenPath,
 	}
 	req, err := http.NewRequest(http.MethodPost, iamTokenEndpoint.String(), payload)
 	if err != nil {
