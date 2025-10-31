@@ -38,6 +38,15 @@ client, err := wx.NewClient(
 )
 ```
 
+To connect to a CPD instance, do it like so:
+```go
+client, err := wx.NewClient(
+  wx.WithCPD(url, username),
+  wx.WithCPDAPIKey(apiKey),
+  wx.WithWatsonxSpaceID(spaceID)
+)
+```
+
 #### Generate Text
 
 Generation:

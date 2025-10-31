@@ -1,4 +1,4 @@
-package test
+package http
 
 import (
 	"encoding/json"
@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
 // TestRetryWithSuccessOnFirstRequest tests the retry mechanism with a server that always returns a 200 status code.
@@ -33,9 +31,9 @@ func TestRetryWithSuccessOnFirstRequest(t *testing.T) {
 		return http.Get(server.URL + "/success")
 	}
 
-	resp, err := wx.Retry(
+	resp, err := Retry(
 		sendRequest,
-		wx.WithOnRetry(func(n uint, err error) {
+		WithOnRetry(func(n uint, err error) {
 			retryCount = n
 			log.Printf("Retrying request after error: %v", err)
 		}),
@@ -77,10 +75,10 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 
 	startTime := time.Now()
 
-	resp, err := wx.Retry(
+	resp, err := Retry(
 		sendRequest,
-		wx.WithBackoff(backoffTime),
-		wx.WithOnRetry(func(n uint, err error) {
+		WithBackoff(backoffTime),
+		WithOnRetry(func(n uint, err error) {
 			retryCount = n
 			log.Printf("Retrying request after error: %v", err)
 		}),

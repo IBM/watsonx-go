@@ -1,15 +1,30 @@
 package models
 
+import (
+	"github.com/IBM/watsonx-go/pkg/constants"
+)
+
 type ClientOption func(*ClientOptions)
 
 type ClientOptions struct {
-	URL        string
-	IAM        string
-	Region     IBMCloudRegion
+	URL string
+
+	IAM    string
+	Region constants.IBMCloudRegion
+
+	CPD         string
+	CPDUsername string
+	cpdPassword string
+	cpdAPIKey   string
+
 	APIVersion string
 
-	apiKey    WatsonxAPIKey
-	projectID WatsonxProjectID
+	apiKey constants.WatsonxAPIKey
+
+	projectID constants.WatsonxProjectID
+	spaceID   constants.WatsonxSpaceID
+
+	disableTLSVerification bool
 }
 
 func WithURL(url string) ClientOption {
@@ -18,13 +33,32 @@ func WithURL(url string) ClientOption {
 	}
 }
 
-func WithIAM(iam string) ClientOption {
+func WithIAM(iamHost string) ClientOption {
 	return func(o *ClientOptions) {
-		o.IAM = iam
+		o.IAM = iamHost
 	}
 }
 
-func WithRegion(region IBMCloudRegion) ClientOption {
+func WithCPD(cpdHost string, cpdUsername string) ClientOption {
+	return func(o *ClientOptions) {
+		o.CPD = cpdHost
+		o.CPDUsername = cpdUsername
+	}
+}
+
+func WithCPDPassword(password string) ClientOption {
+	return func(o *ClientOptions) {
+		o.cpdPassword = password
+	}
+}
+
+func WithCPDAPIKey(apiKey string) ClientOption {
+	return func(o *ClientOptions) {
+		o.cpdAPIKey = apiKey
+	}
+}
+
+func WithRegion(region constants.IBMCloudRegion) ClientOption {
 	return func(o *ClientOptions) {
 		o.Region = region
 	}
@@ -36,14 +70,26 @@ func WithAPIVersion(apiVersion string) ClientOption {
 	}
 }
 
-func WithWatsonxAPIKey(watsonxAPIKey WatsonxAPIKey) ClientOption {
+func WithWatsonxAPIKey(watsonxAPIKey constants.WatsonxAPIKey) ClientOption {
 	return func(o *ClientOptions) {
 		o.apiKey = watsonxAPIKey
 	}
 }
 
-func WithWatsonxProjectID(projectID WatsonxProjectID) ClientOption {
+func WithWatsonxProjectID(projectID constants.WatsonxProjectID) ClientOption {
 	return func(o *ClientOptions) {
 		o.projectID = projectID
+	}
+}
+
+func WithWatsonxSpaceID(spaceID constants.WatsonxSpaceID) ClientOption {
+	return func(o *ClientOptions) {
+		o.spaceID = spaceID
+	}
+}
+
+func WithDisableTLSVerification() ClientOption {
+	return func(o *ClientOptions) {
+		o.disableTLSVerification = true
 	}
 }

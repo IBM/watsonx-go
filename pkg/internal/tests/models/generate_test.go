@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/IBM/watsonx-go/pkg/constants"
 	wx "github.com/IBM/watsonx-go/pkg/models"
 )
 
@@ -16,7 +17,7 @@ func TestClientCreationWithEnvVars(t *testing.T) {
 }
 
 func TestClientCreationWithPassing(t *testing.T) {
-	apiKey, projectID := os.Getenv(wx.WatsonxAPIKeyEnvVarName), os.Getenv(wx.WatsonxProjectIDEnvVarName)
+	apiKey, projectID := os.Getenv(constants.WatsonxAPIKeyEnvVarName), os.Getenv(constants.WatsonxProjectIDEnvVarName)
 
 	if apiKey == "" {
 		t.Fatal("No watsonx API key provided")

@@ -1,7 +1,8 @@
-package models
+package http
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"math/rand"
 	"net/http"
@@ -146,9 +147,15 @@ type HttpClient struct {
 	httpClient *http.Client
 }
 
-func NewHttpClient() *HttpClient {
+func NewHttpClient(disableTLSVerification bool) *HttpClient {
+	c := &http.Client{}
+	if disableTLSVerification == true {
+		c.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
 	return &HttpClient{
-		httpClient: &http.Client{},
+		httpClient: c,
 	}
 }
 

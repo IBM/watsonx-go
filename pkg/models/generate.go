@@ -37,7 +37,8 @@ type GenerateTextResult struct {
 }
 
 type GenerateTextPayload struct {
-	ProjectID  string           `json:"project_id"`
+	ProjectID  string           `json:"project_id,omitempty"`
+	SpaceID    string           `json:"space_id,omitempty"`
 	Model      string           `json:"model_id"`
 	Prompt     string           `json:"input"`
 	Parameters *GenerateOptions `json:"parameters,omitempty"`
@@ -66,6 +67,7 @@ func (m *Client) GenerateText(model, prompt string, options ...GenerateOption) (
 
 	payload := GenerateTextPayload{
 		ProjectID:  m.projectID,
+		SpaceID:    m.spaceID,
 		Model:      model,
 		Prompt:     prompt,
 		Parameters: opts,
@@ -77,7 +79,7 @@ func (m *Client) GenerateText(model, prompt string, options ...GenerateOption) (
 	}
 
 	if len(response.Results) == 0 {
-		return GenerateTextResult{}, errors.New("no result recieved")
+		return GenerateTextResult{}, errors.New("no result received")
 	}
 
 	result := response.Results[0]
@@ -101,7 +103,7 @@ func (m *Client) generateTextRequest(payload GenerateTextPayload) (generateTextR
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+m.token.value)
+	req.Header.Set("Authorization", "Bearer "+m.token.Value)
 
 	res, err := m.httpClient.DoWithRetry(req)
 	if err != nil {
@@ -141,6 +143,7 @@ func (m *Client) GenerateTextStream(model, prompt string, options ...GenerateOpt
 
 		payload := GenerateTextPayload{
 			ProjectID:  m.projectID,
+			SpaceID:    m.spaceID,
 			Model:      model,
 			Prompt:     prompt,
 			Parameters: opts,
@@ -182,7 +185,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 		}
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", "Bearer "+m.token.value)
+		req.Header.Set("Authorization", "Bearer "+m.token.Value)
 		req.Header.Set("Accept", "text/event-stream")
 
 		res, err := m.httpClient.DoWithRetry(req)
@@ -204,7 +207,7 @@ func (m *Client) generateTextStreamRequest(payload GenerateTextPayload) (<-chan 
 			var generation generateTextResponse
 
 			if err := json.Unmarshal([]byte(data), &generation); err != nil {
-				log.Println("error unmarshalling data: ", err)
+				log.Println("error unmarshaling data: ", err)
 				return
 			}
 			dataChan <- generation

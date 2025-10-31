@@ -367,11 +367,13 @@ func (c *Client) SimpleChat(modelID, prompt string, options ...ChatOption) (stri
 func (c *Client) BuildChatRequest(modelID string, messages []ChatMessage, opts *ChatOptions) ChatRequest {
 	// Use the project ID from the client (already configured during client creation)
 	projectID := string(c.projectID)
+	spaceID := string(c.spaceID)
 
 	payload := ChatRequest{
 		ModelID:             modelID,
 		Messages:            messages,
 		ProjectID:           &projectID,
+		SpaceID:             &spaceID,
 		Tools:               opts.Tools,
 		ToolChoiceOption:    opts.ToolChoiceOption,
 		ToolChoice:          opts.ToolChoice,
@@ -417,7 +419,7 @@ func (c *Client) generateChatRequest(payload ChatRequest) (ChatResponse, error) 
 
 	// Set required headers
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.token.value)
+	req.Header.Set("Authorization", "Bearer "+c.token.Value)
 
 	// Execute the request using the client's HTTP client with retry
 	res, err := c.httpClient.DoWithRetry(req)
