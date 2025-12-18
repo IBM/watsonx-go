@@ -1,8 +1,9 @@
 package models
 
 import (
+	"bytes"
 	"context"
-	"errors"
+	"io"
 	"math/rand"
 	"net/http"
 	"time"
@@ -77,8 +78,21 @@ func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) (*ht
 			return resp, nil
 		}
 
+		// Convert non-200 HTTP responses into detailed errors
 		if err == nil && resp != nil {
-			err = errors.New(resp.Status)
+			// Read and preserve the response body
+			bodyBytes, readErr := io.ReadAll(resp.Body)
+			resp.Body.Close()
+
+			if readErr != nil {
+				err = readErr
+			} else {
+				// Restore body so ParseErrorResponse can read it
+				resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+				// Parse detailed WatsonX error
+				err = ParseErrorResponse(resp)
+			}
 		}
 
 		if !opts.retryIf(err) {
@@ -157,9 +171,36 @@ func (c *HttpClient) Do(req *http.Request) (*http.Response, error) {
 }
 
 func (c *HttpClient) DoWithRetry(req *http.Request) (*http.Response, error) {
+	// Get a reusable body function to allow retries with the same request body
+	getBody, err := getReusableBody(req)
+	if err != nil {
+		return nil, err
+	}
 	return Retry(
 		func() (*http.Response, error) {
+			// Reset the request body for each retry attempt
+			req.Body = getBody()
 			return c.httpClient.Do(req)
 		},
 	)
+}
+
+// getReusableBody reads the request body and returns a function that creates a new io.ReadCloser
+// This allows the request body to be reused across multiple retry attempts
+func getReusableBody(req *http.Request) (func() io.ReadCloser, error) {
+	if req.Body == nil || req.Body == http.NoBody {
+		return func() io.ReadCloser { return http.NoBody }, nil
+	}
+
+	// Read the entire body
+	bodyBytes, err := io.ReadAll(req.Body)
+	req.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	// Return a function that creates a new reader from the saved bytes
+	return func() io.ReadCloser {
+		return io.NopCloser(bytes.NewReader(bodyBytes))
+	}, nil
 }

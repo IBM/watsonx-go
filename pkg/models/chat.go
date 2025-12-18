@@ -432,10 +432,8 @@ func (c *Client) generateChatRequest(payload ChatRequest) (ChatResponse, error) 
 
 	// Check for successful status code
 	if res.StatusCode != http.StatusOK {
-		// Read response body for error details
-		body := make([]byte, errorChatBodyBufferSize)
-		n, _ := res.Body.Read(body)
-		return ChatResponse{}, errors.New(string(body[:n]))
+		// Parse the detailed error response from Watson X API
+		return ChatResponse{}, ParseErrorResponse(res)
 	}
 
 	// Decode the response
