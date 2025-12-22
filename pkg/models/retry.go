@@ -87,11 +87,11 @@ func Retry(retryableFunc RetryableFuncWithResponse, options ...RetryOption) (*ht
 			if readErr != nil {
 				err = readErr
 			} else {
-				// Restore body so ParseErrorResponse can read it
+				// Restore body so DecodeWatsonxError can read it
 				resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 				// Parse detailed WatsonX error
-				err = ParseErrorResponse(resp)
+				err = DecodeWatsonxError(resp)
 			}
 		}
 

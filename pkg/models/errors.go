@@ -8,6 +8,26 @@ import (
 	"net/http"
 )
 
+// WatsonxError represents a structured WatsonX API error
+type WatsonxError struct {
+	StatusCode int
+	Errors     []ErrorDetail
+	Trace      string
+}
+
+// Error implements the error interface
+func (e *WatsonxError) Error() string {
+	if len(e.Errors) > 0 {
+		return fmt.Sprintf(
+			"watsonx error (%d): %s - %s",
+			e.StatusCode,
+			e.Errors[0].Code,
+			e.Errors[0].Message,
+		)
+	}
+	return fmt.Sprintf("watsonx error (%d)", e.StatusCode)
+}
+
 // WatsonxErrorResponse represents the error response structure from Watson X API
 type WatsonxErrorResponse struct {
 	Errors []ErrorDetail `json:"errors"`
@@ -21,39 +41,41 @@ type ErrorDetail struct {
 	MoreInfo string `json:"more_info"`
 }
 
-// ParseErrorResponse attempts to parse an HTTP error response and return a formatted error
-func ParseErrorResponse(resp *http.Response) error {
+// DecodeWatsonxError attempts to parse an HTTP error response and return a structured watsonx error
+func DecodeWatsonxError(resp *http.Response) error {
 	if resp == nil {
-		return fmt.Errorf("nil response")
+		return &WatsonxError{}
 	}
 
-	// Read the response body
+	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("watsonx error (%d): failed to read error response", resp.StatusCode)
+		return &WatsonxError{
+			StatusCode: resp.StatusCode,
+		}
 	}
 
-	// Restore the body so it can be read again if needed
+	// Restore body so it can be read again
 	resp.Body = io.NopCloser(bytes.NewBuffer(body))
 
-	// If body is empty, return status-based error
+	wxErr := &WatsonxError{
+		StatusCode: resp.StatusCode,
+	}
+
+	// Empty body → status-only error
 	if len(body) == 0 {
-		return fmt.Errorf("watsonx error (%d): %s", resp.StatusCode, resp.Status)
+		return wxErr
 	}
 
-	// Try to parse as WatsonxErrorResponse
-	var wxErr WatsonxErrorResponse
-	if err := json.Unmarshal(body, &wxErr); err != nil {
-		// If parsing fails, return generic error with status code and body
-		return fmt.Errorf("watsonx error (%d): %s", resp.StatusCode, string(body))
+	// Try to parse WatsonX error schema
+	var apiErr WatsonxErrorResponse
+	if err := json.Unmarshal(body, &apiErr); err != nil {
+		// Unknown / non-JSON error
+		return wxErr
 	}
 
-	// Format: watsonx error (404): model_not_supported - Model 'xyz' was not found
-	if len(wxErr.Errors) > 0 {
-		firstError := wxErr.Errors[0]
-		return fmt.Errorf("watsonx error (%d): %s - %s", resp.StatusCode, firstError.Code, firstError.Message)
-	}
+	wxErr.Errors = apiErr.Errors
+	wxErr.Trace = apiErr.Trace
 
-	// Fallback if no errors array
-	return fmt.Errorf("watsonx error (%d): %s", resp.StatusCode, resp.Status)
+	return wxErr
 }
