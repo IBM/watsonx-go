@@ -108,3 +108,93 @@ func TestRetryWithNoSuccessStatusOnAnyRequest(t *testing.T) {
 		t.Errorf("Expected minimum time of %v, but got %v", expectedMinimumTime, elapsedTime)
 	}
 }
+
+// TestRetryReturnsWatsonxErrorWithDetails validates that non-200 responses
+// are converted into structured WatsonxError using DecodeWatsonxError.
+func TestRetryReturnsWatsonxErrorWithDetails(t *testing.T) {
+	errorResponse := `{
+		"errors": [{
+			"code": "invalid_request",
+			"message": "Invalid input parameter",
+			"more_info": "Check request payload"
+		}],
+		"trace": "trace-id-123"
+	}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(errorResponse))
+	}))
+	defer server.Close()
+
+	sendRequest := func() (*http.Response, error) {
+		return http.Get(server.URL)
+	}
+
+	resp, err := wx.Retry(sendRequest)
+
+	if resp != nil {
+		t.Errorf("Expected nil response, got %v", resp)
+	}
+
+	if err == nil {
+		t.Fatal("Expected error but got nil")
+	}
+
+	wxErr, ok := err.(*wx.WatsonxError)
+	if !ok {
+		t.Fatalf("Expected error type *WatsonxError, got %T", err)
+	}
+
+	if wxErr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("Expected status %d, got %d", http.StatusBadRequest, wxErr.StatusCode)
+	}
+
+	if len(wxErr.Errors) != 1 {
+		t.Fatalf("Expected 1 error detail, got %d", len(wxErr.Errors))
+	}
+
+	if wxErr.Errors[0].Code != "invalid_request" {
+		t.Errorf("Unexpected error code: %s", wxErr.Errors[0].Code)
+	}
+
+	if wxErr.Trace != "trace-id-123" {
+		t.Errorf("Expected trace ID, got %s", wxErr.Trace)
+	}
+}
+
+// TestRetryReturnsWatsonxErrorWithEmptyBody validates handling of
+// non-200 responses with an empty response body.
+func TestRetryReturnsWatsonxErrorWithEmptyBody(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	sendRequest := func() (*http.Response, error) {
+		return http.Get(server.URL)
+	}
+
+	resp, err := wx.Retry(sendRequest)
+
+	if resp != nil {
+		t.Errorf("Expected nil response, got %v", resp)
+	}
+
+	if err == nil {
+		t.Fatal("Expected error but got nil")
+	}
+
+	wxErr, ok := err.(*wx.WatsonxError)
+	if !ok {
+		t.Fatalf("Expected error type *WatsonxError, got %T", err)
+	}
+
+	if wxErr.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("Expected status %d, got %d", http.StatusInternalServerError, wxErr.StatusCode)
+	}
+
+	if len(wxErr.Errors) != 0 {
+		t.Errorf("Expected no error details, got %d", len(wxErr.Errors))
+	}
+}

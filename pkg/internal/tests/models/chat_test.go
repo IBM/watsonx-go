@@ -172,3 +172,68 @@ func TestChatInvalidParameter(t *testing.T) {
 		t.Fatal("Expected error for invalid parameter but got nil")
 	}
 }
+
+func TestChatInvalidModelReturnsWatsonxError(t *testing.T) {
+	client := getClient(t)
+
+	messages := []wx.ChatMessage{
+		wx.CreateUserMessage("Hello"),
+	}
+
+	_, err := client.Chat(modelChatInvalidIntegration, messages)
+	if err == nil {
+		t.Fatal("Expected error for invalid model but got nil")
+	}
+
+	wxErr, ok := err.(*wx.WatsonxError)
+	if !ok {
+		t.Fatalf("Expected error type *WatsonxError, got %T", err)
+	}
+
+	if wxErr.StatusCode == 0 {
+		t.Fatal("Expected StatusCode to be set in WatsonxError")
+	}
+
+	if len(wxErr.Errors) == 0 {
+		t.Fatal("Expected error details to be present")
+	}
+
+	if wxErr.Errors[0].Code == "" {
+		t.Fatal("Expected error code to be populated")
+	}
+
+	if wxErr.Errors[0].Message == "" {
+		t.Fatal("Expected error message to be populated")
+	}
+}
+
+func TestChatInvalidParameterReturnsWatsonxError(t *testing.T) {
+	client := getClient(t)
+
+	messages := []wx.ChatMessage{
+		wx.CreateUserMessage("Hello"),
+	}
+
+	_, err := client.Chat(
+		modelChatLlama3Integration,
+		messages,
+		wx.WithChatTemperature(100), // Invalid temperature - should be 0-2
+	)
+
+	if err == nil {
+		t.Fatal("Expected error for invalid parameter but got nil")
+	}
+
+	wxErr, ok := err.(*wx.WatsonxError)
+	if !ok {
+		t.Fatalf("Expected error type *WatsonxError, got %T", err)
+	}
+
+	if wxErr.StatusCode == 0 {
+		t.Fatal("Expected StatusCode to be set")
+	}
+
+	if len(wxErr.Errors) == 0 {
+		t.Fatal("Expected structured error details")
+	}
+}
